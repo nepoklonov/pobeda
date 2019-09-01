@@ -1,0 +1,21 @@
+---
+- logo: pamyat-naroda_ru.png
+  link: https://pamyat-naroda.ru
+  name: Память народа
+  text: Подлинные документы о Второй Мировой Войне
+- logo: mil_ru.png
+  link: http://mil.ru
+  name: Минобороны России
+  text: Министерство обороны Российской Федерации
+- logo: pobeda_elar_ru.png
+  link: http://pobeda.elar.ru
+  name: Вестник "Календарь победы"
+  text: Неизвестные документы, Корпорация ЭЛАР
+- logo: victorymuseum_ru.png
+  link: https://victorymuseum.ru
+  name: Музей Победы
+  text: Открытые экспозиции военной техники, экскурсии и выставки на тему ВОВ
+- logo: www_grekovstudio_ru.png
+  link: http://www.grekovstudio.ru
+  name: Студия Грекова
+  text: Студия Военных художников имени М. Б. Грекова

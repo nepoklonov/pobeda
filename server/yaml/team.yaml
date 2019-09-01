@@ -1,0 +1,164 @@
+---
+positions:
+  - Куратор конкурса
+  - Художественный руководитель конкурса
+  - Экспертный совет
+  - Оргкомитет
+  - Пресс-служба
+  - IT-служба
+  - Региональные координаторы
+team:
+  - position: '0'
+    fullName: Аршинова Алёна Игоревна
+    picture: Аршинова-2.jpg
+    description: Депутат Государственной Думы ФС РФ, куратор Всероссийского конкурса «Краски Чувашии»
+    email: arshinova@duma.gov.ru
+    phone: ''
+    area: ''
+  - position: '1'
+    fullName: Головачев Владимир Сергеевич
+    picture: Головачев-2.jpg
+    description: Художник, директор Центра творческого проектирования «Музеон», член Русского Географического Общества
+    email: vladgolovachev@yandex.ru
+    phone: ''
+    area: ''
+  - position: '2'
+    fullName: Буздыган Владимир Данилович
+    picture: В_Д_Буздыган-2.jpg
+    description: Директор Департамента культуры Министерства обороны Российской Федерации.
+    email: dk_mo@mil.ru
+    phone: ''
+    area: ''
+  - position: '2'
+    fullName: Школьник Александр Яковлевич
+    picture: А_Я_Школьник-2.jpg
+    description: Директор Центрального музея Великой Отечественной войны 1941–1945 гг.
+    email: info@victorymuseum.ru
+    phone: ''
+    area: ''
+  - position: '2'
+    fullName: Старикова Светлана Михайловна
+    picture: Старикова-2.jpg
+    description: Директор Национальной библиотеки Чувашской Республики, Заслуженный работник культуры Чувашской Республики, Заслуженный работник культуры Российской Федерации
+    email: sekretar@publib.cbx.ru
+    phone: ''
+    area: ''
+  - position: '2'
+    fullName: Орлова Ольга Анатольевна
+    picture: Орлова-2.jpg
+    description: Генеральный директор Централизованной библиотечной системы Западного административного округа Москвы
+    email: orlova@bibliozao.ru
+    phone: ''
+    area: ''
+  - position: '2'
+    fullName: Жукова Галина Евгеньевна
+    picture: Жукова-2.jpg
+    description: Кандидат педагогических наук, доцент Московского Государственного Областного Университета, Почетный работник образования РФ, член Экспертного совета по дошкольному образованию Комитета по образованию Государственной Думы Российской Федерации
+    email: gitl@mail.ru
+    phone: ''
+    area: ''
+  - position: '3'
+    fullName: Горина Ирина Владимировна
+    picture: Горина-2.jpg
+    description: Заведующая библиотекой имени Т.Г. Шевченко ГБУК г. Москвы «ЦБС ЗАО», кандидат философских наук
+    email: gorina.sb@yandex.ru
+    phone: ''
+    area: ''
+  - position: '3'
+    fullName: Романова Елизавета Игоревна
+    picture: Романова-2.jpg
+    description: Руководитель объединения «ВОЛОНТЕРЫ СПБ», руководитель корпуса региональных координаторов Акции
+    email: b92927514@gmail.com
+    phone: ''
+    area: ''
+  - position: '3'
+    fullName: Никольская Галина Владимировна
+    picture: Никольская-2.jpg
+    description: Президент «Фонда памяти художника Владимира Шевченко»
+    email: ngv147@gmail.com
+    phone: ''
+    area: ''
+  - position: '3'
+    fullName: Суворова Виктория Николаевна
+    picture: Суворова-2.jpg
+    description: Куратор культурно-просветительских проектов, специалист по дошкольному образованию
+    email: suvorova.victoria2017@yandex.ru
+    phone: ''
+    area: ''
+  - position: '4'
+    fullName: Ревенко Яна Александровна
+    picture: Ревенко-2.jpg
+    description: Руководитель пресс-службы Акции
+    email: ya_revenko@mail.ru
+    phone: 8 (951) 986 36 75
+    area: ''
+  - position: '5'
+    fullName: Ухатов Александлр Александрович
+    picture: ''
+    description: ''
+    email: uhatov007@yandex.ru
+    phone: ''
+    area: ''
+  - position: '5'
+    fullName: Непоклонов Иван Сергеевич
+    picture: ''
+    description: ''
+    email: i.s.nepoklonov@yandex.ru
+    phone: ''
+    area: ''
+  - position: '6'
+    fullName: Затевалова Юлия Алексеевна
+    picture: ''
+    description: ''
+    email: yulya.zatevalova@yandex.ru
+    phone: 8 (977) 543 51 72
+    area: Центральный
+  - position: '6'
+    fullName: Сергеева Виктория Сергеевна
+    picture: ''
+    description: ''
+    email: svsergeeva0601@mail.ru
+    phone: 8 (931) 303 22 92
+    area: Северо-Западный
+  - position: '6'
+    fullName: Есаулова Александра Вячеславовна
+    picture: ''
+    description: ''
+    email: sofi_ailent@mail.ru
+    phone: '8 (988) 094 16 91 '
+    area: Южный
+  - position: '6'
+    fullName: Самедзаде Джейлан Азер кызы
+    picture: ''
+    description: ''
+    email: Ceilasmdzd@mail.ru
+    phone: 8 (988) 795 72 64
+    area: Северо-Кавказский
+  - position: '6'
+    fullName: Шелтукова Юлия Сергеевна
+    picture: ''
+    description: ''
+    email: sheltukova93@mail.ru
+    phone: 8 (960) 302 82 25
+    area: Приволжский
+  - position: '6'
+    fullName: Кривзун Лилия Витальевна
+    picture: ''
+    description: ''
+    email: l.krivzun@yandex.ru
+    phone: 8 (992) 028 28 58
+    area: Уральский
+  - position: '6'
+    fullName: Кужикова Ольга Павловна
+    picture: ''
+    description: ''
+    email: olgakuzhikova@gmail.com
+    phone: '8 (914) 913 92 19 '
+    area: Сибирский
+  - position: '6'
+    fullName: Лагунова Мария Владимировна
+    picture: ''
+    description: ''
+    email: mvl.mger25@yandex.ru
+    phone: '8 (902) 481 92 96'
+    area: Дальневосточный

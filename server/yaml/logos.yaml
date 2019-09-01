@@ -1,0 +1,22 @@
+---
+- name: Общественная приёмная депутата Государственной Думы ФС РФ Алёны Игоревны Аршиновой.
+  logo: arshinova_info.png
+  link: http://arshinova.info/
+- name: РОСПАТРИОТ центр
+  logo: rospatriot.png
+  link: http://xn--80akivbcegdedodc1d.xn--p1ai/
+- name: Музеон
+  logo: muzeon.png
+  link: https://vk.com/spb.muzeon
+- name: Библиотека западного округа
+  logo: bibliozao_ru.png
+  link: https://bibliozao.ru
+- name: Министерство Обороны РФ
+  logo: mil_ru.png
+  link: http://mil.ru/
+- name: Музей Победы
+  logo: victorymuseum_ru.png
+  link: https://victorymuseum.ru/
+- name: Победа РФ
+  logo: pobedarf_ru.png
+  link: https://pobedarf.ru/
