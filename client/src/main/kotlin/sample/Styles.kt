@@ -5,6 +5,8 @@ import kotlinx.css.properties.TextDecoration
 import styled.StyleSheet
 
 val orangeBrightColor = Color("#f70")
+val gray50Color = Color("#aaa")
+val gray70Color = Color("#555")
 val yellowStarColor = rgb(233, 200, 104)
 
 object MainStyles : StyleSheet("main") {

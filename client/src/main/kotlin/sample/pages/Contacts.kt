@@ -6,16 +6,17 @@ import react.dom.a
 import react.setState
 import sample.Contacts
 import sample.callAPI
+import sample.gray70Color
 import sample.info.FileInfo
 import sample.json
 import sample.stucture.StandardPageComponent
 import sample.stucture.YamlListState
-import sample.stucture.init
+import sample.stucture.initYamlListState
 import styled.*
 
 class ContactsComponent : StandardPageComponent<YamlListState<Contacts>>() {
     init {
-        init()
+        initYamlListState()
         callAPI("get-yaml", "yaml=contacts") {
             setState {
                 yaml.addAll(json.parse(Contacts.serializer().list, responseText))
@@ -45,7 +46,7 @@ class ContactsComponent : StandardPageComponent<YamlListState<Contacts>>() {
                             position = Position.relative
                             top = (-3).px
                             paddingLeft = 5.px
-                            color = Color.darkGray
+                            color = gray70Color
                         }
                         +it.text
                     }

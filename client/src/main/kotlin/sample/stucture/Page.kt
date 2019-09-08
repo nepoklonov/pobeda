@@ -6,6 +6,7 @@ import kotlinx.html.id
 import org.w3c.dom.events.Event
 import react.RBuilder
 import react.RComponent
+import react.RProps
 import react.RState
 import react.dom.h2
 import sample.PageProps
@@ -18,7 +19,7 @@ import kotlin.browser.window
 import kotlin.math.max
 
 interface PageState : RState {
-    var scroll: Double
+//    var scroll: Double
 }
 
 interface YamlState<T> : PageState {
@@ -27,7 +28,7 @@ interface YamlState<T> : PageState {
 
 interface YamlListState<T> : YamlState<MutableList<T>>
 
-fun <T> StandardPageComponent<YamlListState<T>>.init() {
+fun <T> RComponent<out RProps, YamlListState<T>>.initYamlListState() {
     state.yaml = mutableListOf()
 }
 
@@ -79,7 +80,7 @@ abstract class StandardPageComponent<S : PageState> : PageComponent<S>() {
         val root = document.getElementById("root")
         val rootParent = document.getElementById("root-parent")
         if (pageBody != null && root != null && rootParent != null) {
-            var newHeight = pageBody.run { scrollHeight - clientHeight } + root.scrollHeight
+            val newHeight = pageBody.run { scrollHeight - clientHeight } + root.scrollHeight
             props.setHeight(newHeight.px)
 //            console.log("${pageBody.scrollHeight - pageBody.clientHeight + root.scrollHeight}")
         }

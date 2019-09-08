@@ -20,7 +20,7 @@ import kotlin.reflect.KClass
 
 const val scale = General.scale
 
-class RootComponent : RComponent<RootProps, RootState>() {
+class RootComponent(props: RootProps) : RComponent<RootProps, RootState>(props) {
     init {
         state.height = 100.pct
         state.scrolling = false
@@ -41,10 +41,10 @@ class RootComponent : RComponent<RootProps, RootState>() {
                 css {
                     width = 100.pct
                     height = 100.pct
-                    if (state.scrolling) {
-                        position = Position.fixed
+                    position = if (state.scrolling) {
+                        Position.fixed
                     } else {
-                        position = Position.absolute
+                        Position.absolute
                     }
                     left = state.fixedLeft
                     top = state.fixedTop

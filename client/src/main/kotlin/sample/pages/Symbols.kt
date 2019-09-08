@@ -9,14 +9,14 @@ import sample.info.FileInfo
 import sample.json
 import sample.stucture.StandardPageComponent
 import sample.stucture.YamlListState
-import sample.stucture.init
+import sample.stucture.initYamlListState
 import styled.StyledDOMBuilder
 import styled.css
 import styled.styledImg
 
 class SymbolsComponent : StandardPageComponent<YamlListState<String>>() {
     init {
-        init()
+        initYamlListState()
         callAPI("get-yaml", "yaml=symbols") {
             setState {
                 yaml.addAll(json.parse(String.serializer().list, responseText))

@@ -12,14 +12,14 @@ import sample.info.FileInfo
 import sample.json
 import sample.stucture.StandardPageComponent
 import sample.stucture.YamlListState
-import sample.stucture.init
+import sample.stucture.initYamlListState
 import styled.StyledDOMBuilder
 import styled.css
 import styled.styledImg
 
 class PartnersComponent : StandardPageComponent<YamlListState<Logos>>() {
     init {
-        init()
+        initYamlListState()
         callAPI("get-yaml", "yaml=logos") {
             setState {
                 yaml.addAll(json.parse(Logos.serializer().list, responseText))

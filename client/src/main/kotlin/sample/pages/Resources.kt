@@ -7,16 +7,17 @@ import react.dom.p
 import react.setState
 import sample.Resource
 import sample.callAPI
+import sample.gray50Color
 import sample.info.FileInfo
 import sample.json
 import sample.stucture.StandardPageComponent
 import sample.stucture.YamlListState
-import sample.stucture.init
+import sample.stucture.initYamlListState
 import styled.*
 
 class ResourcesComponent : StandardPageComponent<YamlListState<Resource>>() {
     init {
-        init()
+        initYamlListState()
         callAPI("get-yaml", "yaml=resources") {
             setState {
                 yaml.addAll(json.parse(Resource.serializer().list, responseText))
@@ -53,7 +54,7 @@ class ResourcesComponent : StandardPageComponent<YamlListState<Resource>>() {
                         styledP {
                             css {
                                 marginTop = 5.px
-                                color = Color.darkGray
+                                color = gray50Color
                                 fontSize = 10.pt
                             }
                             +it.text
