@@ -9,7 +9,6 @@ import kotlinx.html.js.onSubmitFunction
 import org.w3c.dom.HTMLInputElement
 import react.*
 import react.dom.RDOMBuilder
-import react.dom.p
 import sample.gray50Color
 import sample.gray70Color
 import sample.stucture.PageState
