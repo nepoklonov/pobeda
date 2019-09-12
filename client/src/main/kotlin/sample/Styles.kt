@@ -43,6 +43,13 @@ object MainStyles : StyleSheet("main") {
         }
     }
     val current by css {
-        backgroundColor = Color.orangeRed
+        backgroundColor = orangeBrightColor
+    }
+    val indented by css {
+        before {
+            color = orangeBrightColor
+            content = QuotedString("\\25B6")
+            marginRight = 3.px
+        }
     }
 }
