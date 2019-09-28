@@ -1,7 +1,5 @@
 package sample
 
-//import io.ktor.netty.Netty
-import com.charleskorn.kaml.Yaml
 import io.ktor.application.Application
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
@@ -12,27 +10,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.content.file
 import io.ktor.http.content.files
 import io.ktor.http.content.static
-import io.ktor.request.receiveParameters
 import io.ktor.response.respondText
 import io.ktor.routing.Route
 import io.ktor.routing.get
-import io.ktor.routing.post
 import io.ktor.routing.routing
 import kotlinx.css.*
 import kotlinx.css.Display.flex
 import kotlinx.css.Position.absolute
 import kotlinx.css.properties.LineHeight
 import kotlinx.html.*
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
-import sample.info.FileInfo
 import sample.info.General
-import java.io.File
 
 fun Route.openFolder(folderName: String) {
     static("/$folderName") {
-        files("$folderName")
+        files(folderName)
     }
 }
 
@@ -48,9 +39,7 @@ fun Application.main() {
         anyHost()
         allowCredentials = true
     }
-//    embeddedServer(Jetty, 8080) {
     routing {
-//        attributes.put(AttributeKey("Access-Control-Allow-Origin"), "*")
         get("{...}") {
             call.respondHtml {
                 head {
@@ -112,38 +101,9 @@ fun Application.main() {
             }
         }
         openFolders("images", "smi/documents", "fonts", "yaml")
-
-        get("/d") {
-            val get = call.request.queryParameters
-            call.respondText {
-                get.toString()
-            }
-        }
-        post("/api/get-yaml") {
-            val post = call.receiveParameters()
-            post["yaml"]?.let { yamlName ->
-                if (yamlName in FileInfo.yamlList) {
-                    val yamlText = File("${FileInfo.yamlDir}/$yamlName.yaml").readText()
-                    val yamlSerializer = when (yamlName) {
-                        "resources" -> Resource.serializer().list
-                        "symbols" -> String.serializer().list
-                        "team" -> Team.serializer()
-                        "smi" -> Smi.serializer()
-                        "contacts" -> Contacts.serializer().list
-                        "logos" -> Logos.serializer().list
-                        else -> throw IllegalArgumentException()
-                    }
-                    val yamlParsed = Yaml.default.parse(yamlSerializer, yamlText)
-                    call.respondText(json.stringify(yamlSerializer as SerializationStrategy<Any>, yamlParsed))
-                } else {
-                    call.respondText("The yaml argument is wrong")
-                }
-            } ?: call.respondText("The yaml argument is empty")
-        }
-        post("api/load") {
-
-        }
-//    }
+        getYamlAPI()
+        loadFileAPI()
+        loadFormAPI()
     }
 }
 
