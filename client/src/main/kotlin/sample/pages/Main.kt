@@ -16,18 +16,6 @@ import sample.stucture.PageState
 import styled.*
 
 class MainComponent : PageComponent<PageState>() {
-//    init {
-//        var xhttp = XMLHttpRequest()
-//        xhttp.open("POST", "http://127.0.0.1:8088/api/")
-//        xhttp.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-//        xhttp.onreadystatechange = {
-//            if (xhttp.readyState == 4.toShort()) {
-//                window.alert(xhttp.responseText)
-//            }
-//        }
-//        xhttp.send("a=b")
-//    }
-
     override fun StyledDOMBuilder<*>.page() {
         css {
             alignItems = Align.flexStart

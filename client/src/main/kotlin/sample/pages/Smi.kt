@@ -3,6 +3,7 @@ package sample.pages
 import kotlinx.css.maxHeight
 import kotlinx.css.maxWidth
 import kotlinx.css.px
+import org.w3c.xhr.FormData
 import react.dom.a
 import react.dom.p
 import react.setState
@@ -19,7 +20,9 @@ import styled.styledImg
 class SmiComponent : StandardPageComponent<YamlState<Smi>>() {
     init {
         state.yaml = Smi(mutableListOf(), mutableListOf())
-        callAPI("get-yaml", "yaml=smi") {
+        val formData = FormData()
+        formData.append("yaml", "smi")
+        callAPI("get-yaml", formData) {
             setState {
                 val smiParsed = json.parse(Smi.serializer(), responseText)
                 yaml.files.addAll(smiParsed.files)
@@ -32,7 +35,7 @@ class SmiComponent : StandardPageComponent<YamlState<Smi>>() {
         if (state.yaml != undefined) {
             state.yaml.files.forEach {
                 p {
-                    a(href = it, target = "_blank") {
+                    a(href = "/smi/documents/$it", target = "_blank") {
                         +it
                     }
                 }

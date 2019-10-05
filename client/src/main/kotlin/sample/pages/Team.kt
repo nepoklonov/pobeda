@@ -1,6 +1,7 @@
 package sample.pages
 
 import kotlinx.css.*
+import org.w3c.xhr.FormData
 import react.dom.h3
 import react.dom.p
 import react.setState
@@ -14,7 +15,9 @@ import styled.*
 
 class TeamComponent : StandardPageComponent<YamlState<Team>>() {
     init {
-        callAPI("get-yaml", "yaml=team") {
+        val formData = FormData()
+        formData.append("yaml", "team")
+        callAPI("get-yaml", formData) {
             setState {
                 yaml = json.parse(Team.serializer(), responseText)
             }

@@ -4,6 +4,7 @@ import kotlinx.css.*
 import kotlinx.css.properties.LineHeight
 import kotlinx.css.properties.borderTop
 import kotlinx.serialization.list
+import org.w3c.xhr.FormData
 import react.RBuilder
 import react.RComponent
 import react.RProps
@@ -22,7 +23,9 @@ import styled.styledSpan
 class FooterComponent : RComponent<RProps, YamlListState<Logos>>() {
     init {
         initYamlListState()
-        callAPI("get-yaml", "yaml=logos") {
+        val formData = FormData()
+        formData.append("yaml", "logos")
+        callAPI("get-yaml", formData) {
             setState {
                 yaml.addAll(json.parse(Logos.serializer().list, responseText))
             }

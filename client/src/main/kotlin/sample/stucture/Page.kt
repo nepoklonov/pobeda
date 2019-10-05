@@ -9,7 +9,6 @@ import react.RComponent
 import react.RProps
 import react.RState
 import react.dom.h2
-import sample.PageProps
 import sample.elementInBox
 import styled.StyledDOMBuilder
 import styled.css
@@ -17,6 +16,13 @@ import styled.styledDiv
 import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.max
+
+interface PageProps : RProps {
+    var pageName: String
+    var ruPageName: String
+    var scroll: (scrolling: Boolean, left: LinearDimension, top: LinearDimension) -> Unit
+    var setHeight: (height: LinearDimension) -> Unit
+}
 
 interface PageState : RState {
 //    var scroll: Double

@@ -3,10 +3,23 @@ package sample.pages
 import kotlinx.css.*
 import kotlinx.html.FormMethod
 import kotlinx.html.InputType
+import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
+import org.w3c.dom.events.Event
+import org.w3c.xhr.FormData
+import react.dom.RDOMBuilder
+import react.dom.a
+import react.dom.br
 import react.setState
-import sample.elements.inputItem
+import sample.associateWith
+import sample.callAPI
+import sample.elements.TextInputComponent
+import sample.elements.input.CheckBoxInputComponent
+import sample.elements.input.FileInputComponent
+import sample.elements.input.SubmitInputComponent
+import sample.getISOSTime
 import sample.gray70Color
+import sample.info.InputField
 import sample.stucture.PageState
 import sample.stucture.StandardPageComponent
 import styled.StyledDOMBuilder
@@ -15,80 +28,114 @@ import styled.styledForm
 import styled.styledP
 import kotlin.browser.window
 
+val types = mutableListOf("text", "checkbox", "file", "submit")
+val inputClasses = mutableListOf(TextInputComponent::class,
+    CheckBoxInputComponent::class, FileInputComponent::class, SubmitInputComponent::class) associateWith types
+val inputTypes = mutableListOf(InputType.text, InputType.checkBox,
+    InputType.file, InputType.submit) associateWith types
+
 interface JoinState : PageState {
-//    var validMap: MutableMap<String, Boolean>
-var checkBoxMap: MutableMap<String, Boolean>
+    var formSent: Boolean
 }
-
-fun validateByPattern(sample: String, pattern: String) = Regex(pattern, setOf(RegexOption.IGNORE_CASE)).matches(sample)
-
-val validateEmail: (String) -> Boolean = {
-    validateByPattern(it, "(([^<>()[\\]\\.,;:\\s@\\\"]+(\\.[^<>()[\\]\\.,;:\\s@\\\"]+)*)|(\\\".+\\\"))@(([^<>()[\\]\\.,;:\\s@\\\"]+\\.)+[^<>()[\\]\\.,;:\\s@\\\"]{2,})")
-}
-
-val validateTypicalWords: (String) -> Boolean = {
-    validateByPattern(it, "[^]+")
-}
-
-val validateNumber: (String) -> Boolean = {
-    validateByPattern(it, "[1-9]\\d?")
-}
-
-val validateCheckBox: (String) -> Boolean = {
-    false
-}
-
 
 class JoinComponent : StandardPageComponent<JoinState>() {
-    init {
-        state.checkBoxMap = mutableMapOf(Pair("essay", false), Pair("supervisor", false))
-    }
+    private var time: String = getISOSTime()
 
-    private val checkBoxUpdated: (s: String, b: Boolean) -> Unit = { s: String, b: Boolean ->
+    private val valueChanged: (String, String) -> Unit = { key, value ->
         setState {
-            checkBoxMap[s] = b
+            InputField.allFields[key]?.value = value
         }
     }
+
+    private val sendData: (Event) -> Unit = { e ->
+        e.preventDefault()
+        val formData = FormData()
+        if (InputField.allFields.count {
+                if (it.value.willBeCollected) formData.append(it.key, it.value.value)
+                !it.value.isValidIfExpected
+            } == 0) {
+            callAPI("load-form", formData) {
+                if (responseText == "ok") {
+                    //TODO make certificate
+                    setState {
+                        formSent = true
+                        window.scrollTo(0.0, 0.0)
+                    }
+                }
+            }
+        } else {
+            console.log("error is mistake") //TODO make all red
+        }
+    }
+
+    init {
+        state.formSent = false
+        InputField.time.value = time
+    }
+
     override fun StyledDOMBuilder<*>.page() {
-        styledForm(action = "", method = FormMethod.post) {
+        if (state.formSent) {
             styledP {
                 css {
                     color = gray70Color
                 }
-                +"Чтобы принять участие в акции, заполните, пожалуйста, небольшую анкету:"
+                +"Спасибо за участие в акции, работа успешно отправлена! "
+                +"В ближайшее время на почту будет отправлен сертификат"
+                br { }
+                a(href = "") {
+                    attrs.onClickFunction = { e ->
+                        e.preventDefault()
+                        setState {
+                            formSent = false
+                        }
+                    }
+                    +"Загрузить ещё одну анкету ->"
+                }
             }
-            css {
-                margin(0.px, 30.px, 0.px, 30.px)
-                display = Display.flex
-                flexWrap = FlexWrap.wrap
-                justifyContent = JustifyContent.spaceBetween
+        } else {
+            styledForm(action = "", method = FormMethod.post) {
+                styledP {
+                    css {
+                        color = gray70Color
+                    }
+                    +"Чтобы принять участие в акции, заполните, пожалуйста, небольшую анкету:"
+                }
+                css {
+                    margin(0.px, 30.px, 0.px, 30.px)
+                    display = Display.flex
+                    flexWrap = FlexWrap.wrap
+                    justifyContent = JustifyContent.spaceBetween
+                }
+                attrs.onSubmitFunction = sendData
+                InputField.allVisibleFields.forEach {
+                    addInput(it.value)
+                }
             }
-            attrs.onSubmitFunction = {
-                window.alert()
-            }
+        }
+    }
 
-            inputItem(InputType.text, "surname", "Фамилия", validation = validateTypicalWords, width = 35.pct)
-            inputItem(InputType.text, "name", "Имя", validation = validateTypicalWords, width = 30.pct)
-            inputItem(InputType.text, "age", "Возраст", validation = validateNumber, width = 17.pct)
-            inputItem(InputType.text, "city", "Населённый пункт", validation = validateTypicalWords)
-            inputItem(InputType.text, "school", "Образовательное учреждение", validation = validateTypicalWords)
-            inputItem(InputType.text, "email", "E-Mail", validation = validateEmail)
-            inputItem(InputType.text, "title", "Название рисунка", validation = validateTypicalWords, width = 40.pct)
-            inputItem(InputType.file, "file", "Загрузите рисунок", validation = validateCheckBox, width = 40.pct)
-            inputItem(InputType.checkBox, "supervisor", "Есть куратор/преподаватель", validation = validateCheckBox, checkBoxUpdated = checkBoxUpdated)
-            if (state.checkBoxMap["supervisor"] == true) {
-                inputItem(InputType.text, "supervisorFIO", "ФИО куратора/преподавателя", validation = validateTypicalWords)
-                inputItem(InputType.text, "supervisorContacts", "E-mail или телефон куратора/преподавателя", validation = validateTypicalWords)
+    private fun RDOMBuilder<*>.addInput(inputField: InputField) = inputField.also { it ->
+        inputClasses[it.type]?.let { inputClass ->
+            child(inputClass) {
+                attrs.also { a ->
+                    a.type = inputTypes[it.type] ?: throw IllegalArgumentException()
+                    a.time = time
+                    a.name = it.name
+                    a.title = it.title
+                    a.isExpected = it.isExpected
+                    a.validation = it.validation
+                    a.valueUpdate = valueChanged
+                    a.width = InputField.run {
+                        when (it) {
+                            surname -> 35.pct
+                            name -> 30.pct
+                            age -> 17.pct
+                            title, file, essayTitle, essayFile, submit -> 40.pct
+                            else -> 100.pct
+                        }
+                    }
+                }
             }
-            inputItem(InputType.checkBox, "essay", "Добавить эссе", validation = validateCheckBox, checkBoxUpdated = checkBoxUpdated)
-            if (state.checkBoxMap["essay"] == true) {
-                inputItem(InputType.text, "essayTitle", "Название эссе (по желанию)", validation = validateTypicalWords, width = 40.pct)
-                inputItem(InputType.file, "essayFile", "Загрузите эссе (по желанию)", validation = validateCheckBox, width = 40.pct)
-                inputItem(InputType.text, "essayText", "Текст эссе (по желанию)", validation = validateTypicalWords)
-            }
-            inputItem(InputType.checkBox, "agree", "Я даю согласие на обработку моих персональных данных.\nОзнакомиться с требованиями федерального закона о персональных данных", validation = validateCheckBox)
-            inputItem(InputType.checkBox, "know", "Я ознакомлен с Положением об Акции", validation = validateCheckBox)
-            inputItem(InputType.submit, "submit", " ", validation = validateCheckBox, width = 40.pct)
         }
     }
 }

@@ -1,8 +1,10 @@
 package sample
 
 import kotlinx.css.*
-import kotlinx.html.id
-import react.*
+import react.RComponent
+import react.RElementBuilder
+import react.RProps
+import react.RState
 import react.dom.render
 import react.router.dom.browserRouter
 import react.router.dom.route
@@ -10,93 +12,25 @@ import react.router.dom.switch
 import sample.info.General
 import sample.info.PageInfo
 import sample.pages.*
-import sample.stucture.*
+import sample.stucture.PageProps
+import sample.stucture.RootComponent
 import styled.StyledComponents
-import styled.css
 import styled.injectGlobal
-import styled.styledDiv
 import kotlin.browser.document
+import kotlin.js.Date
 import kotlin.reflect.KClass
 
 const val scale = General.scale
 
-class RootComponent(props: RootProps) : RComponent<RootProps, RootState>(props) {
-    init {
-        state.height = 100.pct
-        state.scrolling = false
-        state.fixedLeft = 0.px
-        state.fixedTop = 0.px
-    }
-
-    override fun RBuilder.render() {
-        styledDiv {
-            attrs.id = "root-parent"
-            css {
-                display = Display.flex
-                width = 100.pct
-                height = state.height
-            }
-            styledDiv {
-                attrs.id = "root"
-                css {
-                    width = 100.pct
-                    height = 100.pct
-                    position = if (state.scrolling) {
-                        Position.fixed
-                    } else {
-                        Position.absolute
-                    }
-                    left = state.fixedLeft
-                    top = state.fixedTop
-                }
-                child(BackgroundComponent::class) {}
-                child(HeaderComponent::class) {
-                    attrs.current = props.current
-                }
-                child(LeftNavComponent::class) {}
-                child(ContactsPreviewComponent::class) {}
-                child(props.pageComponent) {
-                    attrs.pageName = props.pageName
-                    attrs.ruPageName = props.ruPageName
-                    attrs.scroll = { isScrolling, left, top ->
-                        setState {
-                            fixedLeft = left
-                            fixedTop = top
-                            scrolling = isScrolling
-                        }
-                    }
-                    attrs.setHeight = {h ->
-                        if (state.height.toString() != h.toString()) setState {
-                            height = h
-                        }
-                    }
-                }
-                child(FooterComponent::class) {}
-            }
-        }
-    }
-}
+fun getISOSTime() = Date()
+    .toISOString()
+    .replace(':', '-')
+    .replace('.', '-')
+    .replace('T', '_')
+    .replace("Z", "")
 
 interface RoutedProps : RProps {
     var current: String
-}
-
-interface PageProps : RProps {
-    var pageName: String
-    var ruPageName: String
-    var scroll: (scrolling: Boolean, left: LinearDimension, top: LinearDimension) -> Unit
-    var setHeight: (height: LinearDimension) -> Unit
-}
-
-interface RootProps : RoutedProps, PageProps {
-    var pageComponent: KClass<out RComponent<PageProps, out RState>>
-}
-
-interface RootState : RState {
-    var height: LinearDimension
-    var scrolling: Boolean
-    var fixedLeft: LinearDimension
-    var fixedTop: LinearDimension
 }
 
 fun RElementBuilder<RProps>.primitiveRoute(

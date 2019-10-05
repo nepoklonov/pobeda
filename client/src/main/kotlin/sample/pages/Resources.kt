@@ -2,6 +2,7 @@ package sample.pages
 
 import kotlinx.css.*
 import kotlinx.serialization.list
+import org.w3c.xhr.FormData
 import react.dom.a
 import react.dom.p
 import react.setState
@@ -18,7 +19,9 @@ import styled.*
 class ResourcesComponent : StandardPageComponent<YamlListState<Resource>>() {
     init {
         initYamlListState()
-        callAPI("get-yaml", "yaml=resources") {
+        val formData = FormData()
+        formData.append("yaml", "resources")
+        callAPI("get-yaml", formData) {
             setState {
                 yaml.addAll(json.parse(Resource.serializer().list, responseText))
             }

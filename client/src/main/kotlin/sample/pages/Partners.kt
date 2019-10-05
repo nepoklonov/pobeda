@@ -4,6 +4,7 @@ import kotlinx.css.maxHeight
 import kotlinx.css.maxWidth
 import kotlinx.css.px
 import kotlinx.serialization.list
+import org.w3c.xhr.FormData
 import react.dom.a
 import react.setState
 import sample.Logos
@@ -20,7 +21,9 @@ import styled.styledImg
 class PartnersComponent : StandardPageComponent<YamlListState<Logos>>() {
     init {
         initYamlListState()
-        callAPI("get-yaml", "yaml=logos") {
+        val formData = FormData()
+        formData.append("yaml", "logos")
+        callAPI("get-yaml", formData) {
             setState {
                 yaml.addAll(json.parse(Logos.serializer().list, responseText))
             }

@@ -3,6 +3,7 @@ package sample.pages
 import kotlinx.css.*
 import kotlinx.serialization.list
 import kotlinx.serialization.serializer
+import org.w3c.xhr.FormData
 import react.setState
 import sample.callAPI
 import sample.info.FileInfo
@@ -17,7 +18,9 @@ import styled.styledImg
 class SymbolsComponent : StandardPageComponent<YamlListState<String>>() {
     init {
         initYamlListState()
-        callAPI("get-yaml", "yaml=symbols") {
+        val formData = FormData()
+        formData.append("yaml", "symbols")
+        callAPI("get-yaml", formData) {
             setState {
                 yaml.addAll(json.parse(String.serializer().list, responseText))
             }
