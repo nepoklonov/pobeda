@@ -4,7 +4,8 @@
   name: Память народа
   text: Подлинные документы о Второй Мировой Войне
 - logo: mil_ru.png
-  link: http://mil.ru
+  #  link: http://mil.ru
+  link: https://structure.mil.ru/structure/ministry_of_defence/details.htm?id=11372%40egOrganization
   name: Минобороны России
   text: Министерство обороны Российской Федерации
 - logo: pobeda_elar_ru.png

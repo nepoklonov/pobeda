@@ -9,7 +9,13 @@ repositories {
 }
 
 kotlin {
-    jvm()
+    jvm() {
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+            kotlinOptions {
+                freeCompilerArgs += ['-Xuse-experimental=kotlin.Experimental']
+            }
+        }
+    }
 
     js() {
         compilations.all {
@@ -17,6 +23,7 @@ kotlin {
                 sourceMap = true
                 moduleKind = "commonjs"
                 metaInfo = true
+                freeCompilerArgs += ['-Xuse-experimental=kotlin.Experimental']
             }
         }
 
@@ -28,7 +35,15 @@ kotlin {
     }
 
     sourceSets {
+        all {
+            languageSettings {
+                useExperimentalAnnotation("kotlin.Experimental")
+            }
+        }
         commonMain {
+            compileKotlinJvm {
+                
+            }
             dependencies {
                 implementation 'org.jetbrains.kotlin:kotlin-stdlib-common'
                 implementation "org.jetbrains.kotlinx:kotlinx-serialization-runtime-common:0.11.1"
