@@ -3,7 +3,6 @@ package pobeda.client.stucture
 import kotlinx.css.*
 import kotlinx.html.DIV
 import kotlinx.html.id
-import org.w3c.dom.events.Event
 import pobeda.client.elementInBox
 import react.*
 import react.dom.h2
@@ -11,8 +10,6 @@ import styled.StyledDOMBuilder
 import styled.css
 import styled.styledDiv
 import kotlin.browser.document
-import kotlin.browser.window
-import kotlin.math.max
 
 interface PageProps : RProps {
     var pageName: String
@@ -65,30 +62,30 @@ abstract class PageComponent<S : PageState> : RComponent<PageProps, S>() {
 }
 
 abstract class StandardPageComponent<S : PageState> : PageComponent<S>() {
-    init {
-        val onscroll: (Event) -> Unit = onscroll@{
-            val pageBody = document.getElementById("page-body")
-            val root = document.getElementById("root")
-            if (pageBody == null || root == null) {
-                return@onscroll
-            }
-            val scrollY = max(window.scrollY - 360, 0.0)
-            pageBody.scrollTo(0.0, scrollY)
-            root.getBoundingClientRect().let { r ->
-                if (window.scrollY >= 360 && scrollY <
-                    pageBody.scrollHeight - pageBody.clientHeight) {
-                    props.scroll(true, r.left.px, r.top.px)
-                } else if (window.scrollY < 360) {
-                    props.scroll(false, 0.px, 0.px)
-                } else {
-                    props.scroll(false, 0.px,
-                        (pageBody.scrollHeight - pageBody.clientHeight).px)
-                }
-            }
-
-        }
-        window.onscroll = onscroll
-    }
+//    init {
+//        val onscroll: (Event) -> Unit = onscroll@{
+//            val pageBody = document.getElementById("page-body")
+//            val root = document.getElementById("root")
+//            if (pageBody == null || root == null) {
+//                return@onscroll
+//            }
+//            val scrollY = max(window.scrollY - 360, 0.0)
+//            pageBody.scrollTo(0.0, scrollY)
+//            root.getBoundingClientRect().let { r ->
+//                if (window.scrollY >= 360 && scrollY <
+//                    pageBody.scrollHeight - pageBody.clientHeight) {
+//                    props.scroll(true, r.left.px, r.top.px)
+//                } else if (window.scrollY < 360) {
+//                    props.scroll(false, 0.px, 0.px)
+//                } else {
+//                    props.scroll(false, 0.px,
+//                        (pageBody.scrollHeight - pageBody.clientHeight).px)
+//                }
+//            }
+//
+//        }
+//        window.onscroll = onscroll
+//    }
 
     override fun componentDidMount() {
         val pageBody = document.getElementById("page-body")
@@ -118,9 +115,10 @@ abstract class StandardPageComponent<S : PageState> : PageComponent<S>() {
             styledDiv {
                 attrs.id = "page-body"
                 css {
-                    backgroundColor = Color("rgb(228, 234, 208)")
-                    overflow = Overflow.hidden
+                    //                    backgroundColor = Color("rgb(228, 234, 208)")
+                    overflow = Overflow.auto
                     width = 100.pct
+                    paddingRight = 18.px;
                     height = 100.pct
                 }
                 page()

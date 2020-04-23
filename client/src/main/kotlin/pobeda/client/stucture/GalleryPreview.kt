@@ -72,7 +72,7 @@ class GalleryPreviewComponent : RComponent<RProps, GalleryPreviewState>() {
             attrs.onMouseOverFunction = mouseIn(true)
             attrs.onMouseOutFunction = mouseIn(false)
             css {
-                position = Position.relative
+                position = Position.absolute
                 display = Display.flex
                 justifyContent = JustifyContent.spaceBetween
             }
