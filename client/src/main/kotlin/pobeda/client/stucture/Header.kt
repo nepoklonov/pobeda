@@ -41,7 +41,7 @@ fun today(): Today = Date().let {
     Today(it.getDate().toString(), months[it.getMonth()], it.getFullYear().toString())
 }
 
-val DAY_OF_THE_END = Date.UTC(2020, 4, 9).toLong()
+val DAY_OF_THE_END = Date.UTC(2020, 4, 8).toLong()
 const val msInDay = 1000 * 3600 * 24
 
 fun getDaysLeft() = (-Date.now().toLong() / msInDay + DAY_OF_THE_END / msInDay).toInt()
