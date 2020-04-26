@@ -80,7 +80,7 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
             }
             labelInBox(it.getPluralForm("день", "дня", "дней") + " до финала", 1066, 210, 1480, 280)
         }
-        (state.yaml.size + 0).also {
+        (state.yaml.size + 300).also {
             labelInBox(it.toString(), 1626, 210, 1839, 280) {
                 +MainStyles.orangeText
             }

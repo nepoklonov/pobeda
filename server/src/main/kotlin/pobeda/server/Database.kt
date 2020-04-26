@@ -1,5 +1,6 @@
 package pobeda.server
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import pobeda.common.ModelField
@@ -93,6 +94,14 @@ val participantModel = Participant::class.createModel()
 
 val participantTable = ModelTable(participantModel)
 
+@Serializable
+data class IV(
+    val originalSrc: String,
+    val src: String,
+    val width: Int,
+    val height: Int,
+    val isOriginal: Boolean
+)
 
 object ImageVersions : Table() {
     val originalSrc = varchar("originalSrc", 255)

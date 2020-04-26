@@ -40,6 +40,38 @@ fun Application.main() {
             file("main.bundle.js")
         }
 
+//        get("/tasks/05928/") {
+//            val pText = File("yaml/p.json").readText()
+//            val ivText = File("yaml/iv.json").readText()
+//            val ps = Participant.serializer().list
+//            val ivs = IV.serializer().list
+//
+//            val p = json.parse(ps, pText)
+//            val iv = json.parse(ivs, ivText)
+//
+//            call.respondHtml {
+//                +"yesssss"
+//            }
+//            transaction {
+//                SchemaUtils.create(participantTable)
+//                p.forEachIndexed { index, it ->
+//                    println(index)
+//                    participantTable.insert(it)
+//                }
+//                iv.forEachIndexed { index, i ->
+//                    println(index)
+//                    ImageVersions.insert {
+//                        it[originalSrc] = i.originalSrc
+//                        it[src] = i.src
+//                        it[width] = i.width
+//                        it[height] = i.height
+//                        it[isOriginal] = i.isOriginal
+//                    }
+//                }
+//            }
+//            print("yessssss")
+//        }
+
         generateLoadingHTML("{...}")
         generateStylesCSS("/styles.css")
 
