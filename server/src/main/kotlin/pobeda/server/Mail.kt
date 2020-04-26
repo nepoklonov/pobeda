@@ -84,12 +84,12 @@ fun sendCertificate(email: String, fio: String, hash: String = "1", number: Stri
 
     val mailSession = Session.getInstance(mailProps, object : Authenticator() {
         override fun getPasswordAuthentication(): PasswordAuthentication {
-            return PasswordAuthentication("risyem-pobedy", "pobeda1945")
+            return PasswordAuthentication("risyem-pobedy-2", "pobeda1945-2")
         }
     })
 
     val message = MimeMessage(mailSession)
-    message.setFrom(InternetAddress("risyem-pobedy@yandex.ru"))
+    message.setFrom(InternetAddress("risyem-pobedy-2@yandex.ru"))
     message.setRecipients(Message.RecipientType.TO, email.trim().toLowerCase())
     message.setSubject("Сертификат участника", "UTF-8")
     val mp = MimeMultipart()

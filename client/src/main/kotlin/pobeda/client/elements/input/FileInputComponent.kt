@@ -47,7 +47,7 @@ class FileInputComponent : InputComponent<FileInputState>() {
     override fun StyledDOMBuilder<DIV>.containerBody() {}
     override fun StyledDOMBuilder<INPUT>.inputBody() {
         attrs.accept = if (props.name == "file")
-            "image/*" else "text/plain,application/msword,application/vnd.oasis.opendocument.text"
+            "image/*" else ""//text/plain,application/msword,application/vnd.oasis.opendocument.text"
         attrs.onChangeFunction = {
             val target = it.target as HTMLInputElement
             target.files?.get(0)?.let { file ->
