@@ -95,7 +95,10 @@ fun sendCertificate(email: String, fio: String, hash: String = "1", number: Stri
     val mp = MimeMultipart()
 
     val mbpText = MimeBodyPart()
-    mbpText.setContent("Здравствуйте! Ваша работа успешно загружена в <a href='http://risuem-pobedu.ru/gallery'>галерею</a> официального сайта «Рисуем Победу». Спасибо вам за участие в акции!", "text/html; charset=utf-8")
+    mbpText.setContent("Поздравляем Вас с успешным участием в Акции!\n" +
+            "Созданная Вами работа загружена в мультимедийную галерею Интернет-портала #РисуемПобеду\n" +
+            "Благодарим Вас за участие в Акции и поздравляем с наступающим Днем великой Победы!\n" +
+            "С уважением, Оргкомитет Акции", "text/html; charset=utf-8")
     mp.addBodyPart(mbpText)
 
     val mbpImage = MimeBodyPart()

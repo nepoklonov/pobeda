@@ -15,7 +15,7 @@ class SubmitInputComponent : InputComponent<InputItemState>() {
     override fun StyledDOMBuilder<INPUT>.inputBody() {
         css {
             height = 30.px
-            marginBottom = 100.px //TODO marginBottom in all pages
+            marginBottom = 10.px //TODO marginBottom in all pages
             if (props.enable) backgroundColor = Color("#ddd")
             if (!props.enable) border(1.px, BorderStyle.solid, gray50Color)
             color = if (props.enable) Color.black else Color("#888")
