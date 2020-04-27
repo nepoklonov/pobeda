@@ -76,7 +76,7 @@ fun sendCertificate(email: String, fio: String, hash: String = "1", number: Stri
     println("Image Created")
 
     val mailProps = Properties()
-    mailProps["mail.smtp.host"] = "smtp.yandex.ru"
+    mailProps["mail.smtp.host"] = "mail.risuem-pobedu.ru"
     mailProps["mail.smtp.auth"] = "true"
     mailProps["mail.smtp.port"] = "465"
     mailProps["mail.smtp.socketFactory.port"] = "465"
@@ -84,12 +84,12 @@ fun sendCertificate(email: String, fio: String, hash: String = "1", number: Stri
 
     val mailSession = Session.getInstance(mailProps, object : Authenticator() {
         override fun getPasswordAuthentication(): PasswordAuthentication {
-            return PasswordAuthentication("risyem-pobedy-2", "pobeda1945-2")
+            return PasswordAuthentication("noreply@risuem-pobedu.ru", "thereisnospoon1945")
         }
     })
 
     val message = MimeMessage(mailSession)
-    message.setFrom(InternetAddress("risyem-pobedy-2@yandex.ru"))
+    message.setFrom(InternetAddress("noreply@risuem-pobedu.ru"))
     message.setRecipients(Message.RecipientType.TO, email.trim().toLowerCase())
     message.setSubject("Сертификат участника", "UTF-8")
     val mp = MimeMultipart()
