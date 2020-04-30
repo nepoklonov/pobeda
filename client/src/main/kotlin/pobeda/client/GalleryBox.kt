@@ -1,6 +1,7 @@
 package pobeda.client
 
 import kotlinx.css.*
+import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.list
 import kotlinx.serialization.serializer
@@ -27,7 +28,11 @@ interface GalleryBoxState : RState {
 
 
 val updateYaml: RComponent<out RProps, out YamlListState<String>>.(Int, Int) -> Unit = { width, height ->
-    Request.ImagesGetAll(width, height).send(String.serializer().list, ::updateYamlListState)
+    Request.ImagesGetAll(width, height).send(String.serializer().list) {
+        updateYamlListState(it)
+        js("blz()")
+        Unit
+    }
 }
 
 class GalleryBox : RComponent<GalleryBoxProps, GalleryBoxState>() {
@@ -91,9 +96,11 @@ class GalleryBox : RComponent<GalleryBoxProps, GalleryBoxState>() {
                                                 console.log(bigSrc)
                                             }
                                         }
+                                        attrs.classes = setOf("b-lazy")
+                                        attrs["data-src"] = props.content[j]
                                         css {
                                             cursor = Cursor.pointer
-                                            backgroundImage = Image("url('${props.content[j]}')")
+//                                            backgroundImage = Image("url('${props.content[j]}')")
                                             backgroundRepeat = BackgroundRepeat.noRepeat
                                             backgroundSize = "cover"
                                             backgroundPosition = "center center"

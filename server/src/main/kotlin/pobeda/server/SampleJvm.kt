@@ -34,7 +34,7 @@ fun Application.main() {
         allowCredentials = true
     }
     routing {
-        openFolders("images", "smi", "documents", "fonts", "yaml", "uploads")
+        openFolders("images", "smi", "documents", "fonts", "yaml", "uploads", "js")
 
         static("/") {
             file("main.bundle.js")

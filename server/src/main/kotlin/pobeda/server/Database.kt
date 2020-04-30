@@ -135,13 +135,28 @@ fun getAllImages(width: Int, height: Int): List<String> {
     transaction {
         addLogger(StdOutSqlLogger)
         SchemaUtils.create(participantTable)
-        for (participant in participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.DESC)) {
+        val ivs = ImageVersions.selectAll().map {
+            IV(
+                it[ImageVersions.originalSrc],
+                it[ImageVersions.src],
+                it[ImageVersions.width],
+                it[ImageVersions.height],
+                it[ImageVersions.isOriginal]
+            )
+        }.groupBy {
+            it.originalSrc
+        }
+
+        val participants = participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.DESC)
+
+        for (participant in participants) {
             var resultSize = PlanarSize(-1, -1)
             var resultSrc = ""
-            for (version in ImageVersions.select { ImageVersions.originalSrc eq participant[participantTable.columns.first { it.name == "fileName" } as Column<String>] }) {
-                val src = version[ImageVersions.src]
-                val w = version[ImageVersions.width]
-                val h = version[ImageVersions.height]
+            val p = participant[participantTable.columns.first { it.name == "fileName" } as Column<String>]
+            for (version in ivs.getValue(p)) {
+                val src = version.src
+                val w = version.width
+                val h = version.height
                 if (resultSize.width < width && resultSize.height < height &&
                     w > resultSize.width && h > resultSize.height) {
                     resultSize = PlanarSize(w, h)
@@ -151,7 +166,7 @@ fun getAllImages(width: Int, height: Int): List<String> {
                     resultSize = PlanarSize(w, h)
                     resultSrc = src
                 }
-                println("$resultSrc $w $h $resultSize")
+//                println("$resultSrc $w $h $resultSize")
             }
             list.add(resultSrc)
         }
