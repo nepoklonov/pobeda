@@ -66,6 +66,15 @@ class ModelTable<T : Any>(private val model: Model<T>) : Table(model.kClass.simp
         }
     }
 
+
+    fun getColumn(s: String) = columns.first { it.name == s }
+
+    fun ResultRow.toMap(): Map<String, Any> {
+        return model.fields.associate {
+            it.name to this[getColumn(it.name)]!!
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     fun insert(modelInstance: T) {
         val fieldValues = model.toMap(modelInstance)
@@ -205,6 +214,9 @@ suspend fun addImageVersions(originalPath: String) {
                 val newFile = File(newPath)
 
                 ImageIO.write(newImage, "PNG", newFile)
+
+                sendToYandex(newFile, newPath)
+
                 ImageVersions.insert {
                     it[originalSrc] = originalPath
                     it[src] = newPath

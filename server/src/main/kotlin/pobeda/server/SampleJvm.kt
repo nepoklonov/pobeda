@@ -78,6 +78,7 @@ fun Application.main() {
         getYamlAPI()
         getImagesAPI()
         loadParticipantFileAPI()
+        loadAdminParticipantFileAPI()
         loadFormAPI()
         getImageInfoAPI()
     }

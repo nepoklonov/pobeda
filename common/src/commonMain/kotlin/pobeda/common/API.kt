@@ -12,6 +12,7 @@ enum class Method(val methodName: String) {
     LoadForm("api/join/load/form"),
     // TODO: create Participant
     GetImageInfo("api/images/get-info"),
+    ParticipantsGetAll("api/admin/get-all")
 //    GetImageVersion("api/images/get-version")
 }
 
@@ -42,6 +43,9 @@ sealed class Request(val method: Method) {
     class FileUpload(val filesData: List<FileData>) : Request(Method.FileUpload) {
         constructor(fileData: FileData) : this(listOf(fileData))
     }
+
+    @Serializable
+    class ParticipantsGetAll(val password: String, val from: Int) : Request(Method.ParticipantsGetAll)
 
     @Serializable
     class FormSend(val participant: Participant) : Request(Method.LoadForm)

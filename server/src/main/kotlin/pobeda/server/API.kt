@@ -14,11 +14,19 @@ import io.ktor.util.pipeline.PipelineContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.list
 import kotlinx.serialization.serializer
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.transactions.transaction
 import pobeda.common.*
 import pobeda.common.AnswerType.OK
 import pobeda.common.AnswerType.WRONG
+import pobeda.common.interpretation.PlanarSize
 import pobeda.common.interpretation.getFileRefByName
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
+
 
 inline fun <reified T : Request> List<PartData>.receiveForm(): T {
     var result: String? = null
@@ -68,6 +76,22 @@ fun Route.getYamlAPI() {
     }
 }
 
+fun sendToYandex(file: File, path: String) {
+    val response = ""
+    val urlRequest = "https://cloud-api.yandex.net:443/v1/disk/resources?path=%2F"
+    try {
+        val ur = URL(urlRequest)
+        val connection = ur.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.setRequestProperty("Authorization", "OAuth AgAAAAANfC09AAZRi8cdtTnMLUI1vy32P3qsa7Q")
+        val buffer = BufferedInputStream(connection.inputStream)
+        connection.connect()
+    } catch (e: IOException) {
+        println(e.message)
+    }
+    println(response)
+}
+
 fun Route.loadParticipantFileAPI() {
     post(Method.FileUpload.methodName) {
         val allParts = call.receiveMultipart().readAllParts()
@@ -82,6 +106,7 @@ fun Route.loadParticipantFileAPI() {
                 val ext = File(fileData.originalFileName).extension
                 val newPath = dir / subDir / fileData.namePrefix usc randomString(7) dot ext
                 File(dir / files[0]).renameTo(File(newPath))
+                sendToYandex(File(newPath), newPath)
                 if (fileData.fileType == "file") addImageVersions(newPath)
                 answer(Answer(OK, newPath), String.serializer())
             } catch (e: NoSuchElementException) {
@@ -92,6 +117,68 @@ fun Route.loadParticipantFileAPI() {
         }
     }
 }
+
+fun Route.loadAdminParticipantFileAPI() {
+    post(Method.ParticipantsGetAll.methodName) {
+        val request = call.receiveMultipart().readAllParts().receiveForm<Request.ParticipantsGetAll>()
+        val password = request.password
+        val from = request.from
+        if (password == "there is no spoon") {
+            println("correct admin pw")
+            Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+            val t = transaction {
+                addLogger(StdOutSqlLogger)
+                SchemaUtils.create(participantTable)
+
+                val ivs = ImageVersions.selectAll().map {
+                    IV(
+                        it[ImageVersions.originalSrc],
+                        it[ImageVersions.src],
+                        it[ImageVersions.width],
+                        it[ImageVersions.height],
+                        it[ImageVersions.isOriginal]
+                    )
+                }.groupBy {
+                    it.originalSrc
+                }
+
+                val width = 200
+                val height = 200
+
+                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC).limit(50, from).map {
+                    participantTable.run {
+                        it.toMap().filter { (key, value) ->
+                            (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
+                        }.map { (key, value) ->
+                            listOf(key, value.toString())
+                        }.toMutableList() + listOf(run {
+                            var resultSize = PlanarSize(-1, -1)
+                            var resultSrc = ""
+                            val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
+                            for (version in ivs.getValue(p)) {
+                                val src = version.src
+                                val w = version.width
+                                val h = version.height
+                                if (resultSize.width < width && resultSize.height < height &&
+                                    w > resultSize.width && h > resultSize.height) {
+                                    resultSize = PlanarSize(w, h)
+                                    resultSrc = src
+                                } else if (resultSize.width >= w && resultSize.height >= h &&
+                                    w >= width && h >= height) {
+                                    resultSize = PlanarSize(w, h)
+                                    resultSrc = src
+                                }
+                            }
+                            listOf("mini", resultSrc)
+                        })
+                    }
+                }
+            }
+            answer(Answer(OK, t), String.serializer().list.list.list)
+        }
+    }
+}
+
 
 fun Route.loadFormAPI() {
     post(Method.LoadForm.methodName) {

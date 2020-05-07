@@ -70,6 +70,8 @@ fun main() {
 
                     primitiveRoute(Gallery, GalleryComponent::class)
 
+                    primitiveRoute(Admin, AdminComponent::class)
+
                     primitiveRoute(Join, JoinComponent::class)
                     primitiveRoute(About, AboutComponent::class)
                     primitiveRoute(Official, OfficialComponent::class)

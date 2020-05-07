@@ -36,7 +36,7 @@ class RootComponent(props: RootProps) : RComponent<RootProps, RootState>(props) 
             attrs.id = "root-parent"
             css {
                 width = 100.pct
-                height = state.height
+                height = 100.pct
             }
             styledDiv {
                 attrs.id = "root"

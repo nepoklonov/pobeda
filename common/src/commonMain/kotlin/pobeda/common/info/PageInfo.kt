@@ -10,6 +10,8 @@ class PageInfo (val url : String, val name : String, val ruName : String) {
 
         val Gallery = PageInfo("/gallery", "Gallery", "Галерея")
 
+        val Admin = PageInfo("/admin", "Admin", "Админка")
+
         val Join = PageInfo("/join", "Join", "Участвовать")
         val About = PageInfo("/about", "About", "Об акции")
         val Official = PageInfo("/official", "Official", "Положение")
