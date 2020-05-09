@@ -74,13 +74,14 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
             labelInBox(it.month, 360, 210, 560, 280)
             labelInBox(it.year, 629, 210, 759, 280)
         }
-        getDaysLeft().also {
-            labelInBox(it.toString(), 880, 210, 1000, 280) {
+        (getDaysLeft()).also {
+            labelInBox("", 880, 210, 1000, 280) {//it.toString()
                 +MainStyles.orangeText
             }
-            labelInBox(it.getPluralForm("день", "дня", "дней") + " до финала", 1066, 210, 1480, 280)
+//            labelInBox(it.getPluralForm("день", "дня", "дней") + " до финала", 1066, 210, 1480, 280)
+            labelInBox("Акция завершена", 1066, 210, 1480, 280)
         }
-        (state.yaml.size).also {
+        (state.yaml.size + 3289).also {
             labelInBox(it.toString(), 1626, 210, 1839, 280) {
                 +MainStyles.orangeText
             }
