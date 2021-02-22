@@ -41,7 +41,7 @@ fun today(): Today = Date().let {
     Today(it.getDate().toString(), months[it.getMonth()], it.getFullYear().toString())
 }
 
-val DAY_OF_THE_END = Date.UTC(2020, 4, 8).toLong()
+val DAY_OF_THE_END = Date.UTC(2021, 4, 1).toLong()
 const val msInDay = 1000 * 3600 * 24
 
 fun getDaysLeft() = (-Date.now().toLong() / msInDay + DAY_OF_THE_END / msInDay).toInt()
@@ -75,13 +75,22 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
             labelInBox(it.year, 629, 210, 759, 280)
         }
         (getDaysLeft()).also {
-            labelInBox("", 880, 210, 1000, 280) {//it.toString()
-                +MainStyles.orangeText
+            if (it >= 0) {
+                labelInBox(it.toString(), 880, 210, 1000, 280) {
+                    +MainStyles.orangeText
+                }
+            } else {
+                labelInBox("", 880, 210, 1000, 280) {
+                    +MainStyles.orangeText
+                }
             }
-//            labelInBox(it.getPluralForm("день", "дня", "дней") + " до финала", 1066, 210, 1480, 280)
-            labelInBox("Акция завершена", 1066, 210, 1480, 280)
+            if (it >= 0) {
+                labelInBox(it.getPluralForm("день", "дня", "дней") + " до финала", 1066, 210, 1480, 280)
+            } else {
+                labelInBox("Акция завершена", 1066, 210, 1480, 280)
+            }
         }
-        (state.yaml.size + 3289).also {
+        (state.yaml.size).also {
             labelInBox(it.toString(), 1626, 210, 1839, 280) {
                 +MainStyles.orangeText
             }
