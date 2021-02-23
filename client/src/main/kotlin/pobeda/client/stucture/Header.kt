@@ -104,7 +104,7 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
                 left = 4.px
             }
         }
-        labelInBox("Всероссийская акция ${General.ruTitle.quote()}".toUpperCase(), 888, 377, 2167, 432) {
+        labelInBox("Детско-юношеская акция ${General.ruTitle.quote()}".toUpperCase(), 888, 377, 2167, 432) {
             +MainStyles.orangeText
         }
         child(GalleryPreviewComponent::class) {}

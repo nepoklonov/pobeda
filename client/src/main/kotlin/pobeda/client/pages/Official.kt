@@ -11,7 +11,7 @@ import styled.StyledDOMBuilder
 class OfficialComponent : StandardPageComponent<PageState>() {
     override fun StyledDOMBuilder<*>.page() {
         a(href = FileInfo.officialPDF, target = "_blank") {
-            +"Посмотреть или скачать «Положение о Всероссийской детско-юношеской акции \"${General.ruTitle} — 2020\"»"
+            +"Посмотреть или скачать «Положение о Всероссийской детско-юношеской акции \"${General.ruTitle} — 2021\"»"
         }
     }
 }
