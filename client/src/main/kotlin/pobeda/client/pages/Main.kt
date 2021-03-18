@@ -75,13 +75,13 @@ class MainComponent : StandardPageComponent<PageState>() {
                 +"Контактная информация:"
             }
             styledP {
-                +"▪ Официальный сайт Акции: https://risuem_pobedy.ru/"
+                +"▪ Официальный сайт Акции: https://risuem_pobedu.ru/"
             }
             styledP {
                 +"▪ E-mail: risyem-pobedy@yandex.ru"
             }
             styledP {
-                +"▪ Официальные страницы Акции в социальных сетях: ВКонтакте: https://vk.com/risuem_pobedy; Инстаграм: https://www.instagram.com/risuem_pobedy/"
+                +"▪ Официальные страницы Акции в социальных сетях: ВКонтакте: https://vk.com/risuem_pobedu; Инстаграм: https://www.instagram.com/risuem_pobedu/"
             }
             styledP {
                 +"▪ Общая координация Акции: Головачев Владимир Сергеевич, e-mail: vladgolovachev@yandex.ru, м.т.: +7 (962) 706 77 40"
