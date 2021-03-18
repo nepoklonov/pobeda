@@ -5,13 +5,9 @@
   text: risuem_pobedy@yandex.ru
 - name: vk
   logo: vk.png
-  link: https://vk.com/risuem_pobedy
+  link: https://vk.com/risuem_pobedu
   text: vk.com/risuem_pobedu
-- name: facebook
-  logo: fb.png
-  link: https://facebook.com/risuem_pobedy
-  text: facebook.com/risuem_pobedy
 - name: instagram
   logo: inst.png
-  link: https://www.instagram.com/risuem_pobedy
+  link: https://www.instagram.com/risuem_pobedu
   text: instagram.com/risuem_pobedu

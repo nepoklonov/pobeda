@@ -79,7 +79,7 @@ class JoinComponent : StandardPageComponent<JoinState>() {
                         time.value,
                         surname.value,
                         name.value,
-                        age.value.toInt(),
+                        Regex("[^0-9]").replace(age.value, "").toInt(),
                         city.value,
                         school.value,
                         email.value,

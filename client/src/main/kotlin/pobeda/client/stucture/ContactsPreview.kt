@@ -47,7 +47,6 @@ class ContactsPreviewComponent : RComponent<RProps, RState>() {
             }
             contactP("mail", General.eMail)
             contactP("vk", General.enName)
-            contactP("fb", General.enName)
             contactP("inst", General.enName)
         }
     }
