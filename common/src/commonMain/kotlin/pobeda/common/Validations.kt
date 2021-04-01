@@ -9,6 +9,6 @@ fun getValidatorByPattern(r: Regex): (String) -> Boolean =
 
 val validEmail = getValidatorByPattern(".+@.+\\..+".toRegex())
 val validText = getValidatorByPattern(".+".toRegex())
-val validNumber = getValidatorByPattern("[1-9]\\d?([^0-9]+)?".toRegex())
+val validNumber = getValidatorByPattern("\\s*[1-9]\\d?([^0-9]+)?".toRegex())
 val validImageFileName = getValidatorByPattern(".+\\.(jpg|jpeg|jpe|tiff|webp|png|bmp|gif)".toRegex())
 val validEssayFileName = alwaysGood

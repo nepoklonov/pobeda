@@ -176,7 +176,7 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                             br { }
                         }
                         it["fileName"]?.replace("uploads/(images|essays)/".toRegex(), "images/certs/cert-")
-                            ?.replace("_[^-]*[.]".toRegex(), ".")?.let { cert ->
+                            ?.replace("_[^-]*[.]".toRegex(), ".")?.replace("\\.\\w+$".toRegex(), ".jpg")?.let { cert ->
                                 styledA(href = cert, target = "_blank") {
                                     css {
                                         color = Color.blueViolet

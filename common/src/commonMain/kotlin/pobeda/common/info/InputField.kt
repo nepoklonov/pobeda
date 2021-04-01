@@ -36,7 +36,7 @@ data class InputField(
         val supervisorFIO = InputField("supervisorFIO", "ФИО куратора/преподавателя", validText, "text", owner = supervisor)
         val supervisorContacts = InputField("supervisorContacts", "E-mail или телефон куратора/преподавателя", validText, "text", owner = supervisor)
         val essay = InputField("essay", "Добавить эссе", anyCheckBox, "checkbox")
-        val essayTitle = InputField("essayTitle", "Название эссе (по желанию)", validText, "text", owner = essay)
+        val essayTitle = InputField("essayTitle", "Название эссе (по желанию)", alwaysGood, "text", owner = essay)
         val essayFile = InputField("essayFile", "Загрузите эссе (по желанию)", validEssayFileName, "file", owner = essay)
         val essayText = InputField("essayText", "Текст эссе (по желанию)", alwaysGood, "text", owner = essay)
         val agree = InputField("agree", "$1", filledCheckBox, "checkbox")
