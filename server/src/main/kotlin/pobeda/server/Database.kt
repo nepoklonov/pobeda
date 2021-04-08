@@ -1,6 +1,7 @@
 package pobeda.server
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import pobeda.common.ModelField
@@ -112,17 +113,25 @@ data class IV(
     val isOriginal: Boolean
 )
 
-object ImageVersions : Table() {
-    val originalSrc = varchar("originalSrc", 255)
-    val src = varchar("src", 255)
+object ImageVersions : IntIdTable() {
+    val originalSrc = varchar("originalSrc", 1024)
+    val src = varchar("src", 1024)
     val width = integer("width")
     val height = integer("height")
     val isOriginal = bool("isOriginal")
 }
 
+fun initDB() {
+    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
+    transaction {
+        SchemaUtils.create(ImageVersions)
+        SchemaUtils.create(participantTable)
+    }
+}
+
 @Suppress("UNCHECKED_CAST")
 fun addParticipant(participant: Participant): MutableList<String> {
-    Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
     val okList = mutableListOf<String>()
     transaction {
         addLogger(StdOutSqlLogger)
@@ -140,7 +149,7 @@ fun addParticipant(participant: Participant): MutableList<String> {
 @Suppress("UNCHECKED_CAST")
 fun getAllImages(width: Int, height: Int): List<String> {
     val list = mutableListOf<String>()
-    Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
     transaction {
         addLogger(StdOutSqlLogger)
         SchemaUtils.create(participantTable)
@@ -183,8 +192,10 @@ fun getAllImages(width: Int, height: Int): List<String> {
     return list
 }
 
+const val dbPassword = "***"
+
 suspend fun addImageVersions(originalPath: String) {
-    Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
     transaction {
         addLogger(StdOutSqlLogger)
         SchemaUtils.create(ImageVersions)
@@ -233,7 +244,7 @@ suspend fun addImageVersions(originalPath: String) {
 @Suppress("UNCHECKED_CAST")
 fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): List<String> {
     val list = mutableListOf<String>()
-    Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
     transaction {
         addLogger(StdOutSqlLogger)
         SchemaUtils.create(participantTable)

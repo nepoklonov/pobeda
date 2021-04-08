@@ -125,7 +125,7 @@ fun Route.loadAdminParticipantFileAPI() {
         val from = request.from
         if (password == "there is no spoon") {
             println("correct admin pw")
-            Database.connect("jdbc:h2:file:./data/main", driver = "org.h2.Driver")
+            Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
             val t = transaction {
                 addLogger(StdOutSqlLogger)
                 SchemaUtils.create(participantTable)
@@ -220,6 +220,7 @@ fun Route.getImagesAPI() {
             val request = receiveOnlyForm<Request.ImagesGetAll>()
             answer(Answer(OK, getAllImages(request.width, request.height)), String.serializer().list)
         } catch (e: NoSuchElementException) {
+            e.printStackTrace()
             answer(Answer(AnswerType.WRONG, "You can request all images only put defined width and height"), String.serializer())
         }
     }
