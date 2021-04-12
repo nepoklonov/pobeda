@@ -1,6 +1,10 @@
 package pobeda.server
 
 import com.charleskorn.kaml.Yaml
+import com.yandex.disk.rest.Credentials
+import com.yandex.disk.rest.FileDownloadListener
+import com.yandex.disk.rest.ProgressListener
+import com.yandex.disk.rest.RestClient
 import io.ktor.application.ApplicationCall
 import io.ktor.application.call
 import io.ktor.http.content.PartData
@@ -24,6 +28,7 @@ import pobeda.common.interpretation.getFileRefByName
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.IOException
+import java.lang.Exception
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -76,20 +81,17 @@ fun Route.getYamlAPI() {
     }
 }
 
-fun sendToYandex(file: File, path: String) {
-    val response = ""
-    val urlRequest = "https://cloud-api.yandex.net:443/v1/disk/resources?path=%2F"
-    try {
-        val ur = URL(urlRequest)
-        val connection = ur.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Authorization", "OAuth AgAAAAANfC09AAZRi8cdtTnMLUI1vy32P3qsa7Q")
-        val buffer = BufferedInputStream(connection.inputStream)
-        connection.connect()
-    } catch (e: IOException) {
-        println(e.message)
+fun sendToYandex(file: File, path: String): Boolean {
+
+    val yandex = RestClient(Credentials("polystorage", ""))
+    return try {
+        val link = yandex.getUploadLink("pobeda/2021/uploads/images/test.png", true)
+        yandex.uploadFile(link, true, file, null)
+        true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
     }
-    println(response)
 }
 
 fun Route.loadParticipantFileAPI() {
@@ -125,11 +127,7 @@ fun Route.loadAdminParticipantFileAPI() {
         val from = request.from
         if (password == "there is no spoon") {
             println("correct admin pw")
-            Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-            val t = transaction {
-                addLogger(StdOutSqlLogger)
-                SchemaUtils.create(participantTable)
-
+            val t = database {
                 val ivs = ImageVersions.selectAll().map {
                     IV(
                         it[ImageVersions.originalSrc],
@@ -145,34 +143,37 @@ fun Route.loadAdminParticipantFileAPI() {
                 val width = 200
                 val height = 200
 
-                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC).limit(50, from).map {
-                    participantTable.run {
-                        it.toMap().filter { (key, value) ->
-                            (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
-                        }.map { (key, value) ->
-                            listOf(key, value.toString())
-                        }.toMutableList() + listOf(run {
-                            var resultSize = PlanarSize(-1, -1)
-                            var resultSrc = ""
-                            val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
-                            for (version in ivs.getValue(p)) {
-                                val src = version.src
-                                val w = version.width
-                                val h = version.height
-                                if (resultSize.width < width && resultSize.height < height &&
-                                    w > resultSize.width && h > resultSize.height) {
-                                    resultSize = PlanarSize(w, h)
-                                    resultSrc = src
-                                } else if (resultSize.width >= w && resultSize.height >= h &&
-                                    w >= width && h >= height) {
-                                    resultSize = PlanarSize(w, h)
-                                    resultSrc = src
+                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC)
+                    .limit(50, from).map {
+                        participantTable.run {
+                            it.toMap().filter { (key, value) ->
+                                (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
+                            }.map { (key, value) ->
+                                listOf(key, value.toString())
+                            }.toMutableList() + listOf(run {
+                                var resultSize = PlanarSize(-1, -1)
+                                var resultSrc = ""
+                                val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
+                                for (version in ivs.getValue(p)) {
+                                    val src = version.src
+                                    val w = version.width
+                                    val h = version.height
+                                    if (resultSize.width < width && resultSize.height < height &&
+                                        w > resultSize.width && h > resultSize.height
+                                    ) {
+                                        resultSize = PlanarSize(w, h)
+                                        resultSrc = src
+                                    } else if (resultSize.width >= w && resultSize.height >= h &&
+                                        w >= width && h >= height
+                                    ) {
+                                        resultSize = PlanarSize(w, h)
+                                        resultSrc = src
+                                    }
                                 }
-                            }
-                            listOf("mini", resultSrc)
-                        })
+                                listOf("mini", resultSrc)
+                            })
+                        }
                     }
-                }
             }
             answer(Answer(OK, t), String.serializer().list.list.list)
         }
@@ -221,7 +222,10 @@ fun Route.getImagesAPI() {
             answer(Answer(OK, getAllImages(request.width, request.height)), String.serializer().list)
         } catch (e: NoSuchElementException) {
             e.printStackTrace()
-            answer(Answer(AnswerType.WRONG, "You can request all images only put defined width and height"), String.serializer())
+            answer(
+                Answer(AnswerType.WRONG, "You can request all images only put defined width and height"),
+                String.serializer()
+            )
         }
     }
 }
@@ -230,8 +234,14 @@ fun Route.getImageInfoAPI() {
     post(Method.GetImageInfo.methodName) {
         val request = receiveOnlyForm<Request.ImagesGetInfo>()
         try {
-            answer(Answer(OK, getOpenParticipantInfo(request.src, request.width, request.height,
-                request.all)), String.serializer().list)
+            answer(
+                Answer(
+                    OK, getOpenParticipantInfo(
+                        request.src, request.width, request.height,
+                        request.all
+                    )
+                ), String.serializer().list
+            )
         } catch (e: NoSuchElementException) {
             answer(Answer(AnswerType.WRONG, ":("), String.serializer())
         }

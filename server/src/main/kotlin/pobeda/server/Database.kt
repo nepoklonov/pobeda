@@ -14,6 +14,7 @@ import pobeda.common.interpretation.ScaleType.OUTSIDE
 import pobeda.common.interpretation.x
 import pobeda.server.ModelFieldType.*
 import java.io.File
+import java.util.*
 import javax.imageio.ImageIO
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
@@ -23,8 +24,10 @@ enum class ModelFieldType {
     INT, BOOLEAN, STRING, TEXT
 }
 
-class ModelFieldData(val name: String, val type: ModelFieldType, val title: String,
-                     val nullable: Boolean, val isPrimaryKey: Boolean, val autoIncremented: Boolean)
+class ModelFieldData(
+    val name: String, val type: ModelFieldType, val title: String,
+    val nullable: Boolean, val isPrimaryKey: Boolean, val autoIncremented: Boolean
+)
 
 class Model<T : Any>(val fields: List<ModelFieldData>, val kClass: KClass<T>)
 
@@ -39,7 +42,8 @@ fun <T : Any> Model<T>.toMap(instance: T): Map<String, String> {
 fun <T : Any> KClass<T>.createModel() = Model(memberProperties.asSequence().mapNotNull {
     it.findAnnotation<ModelField>()?.to(it)
 }.map { (annotation, prop) ->
-    ModelFieldData(prop.name,
+    ModelFieldData(
+        prop.name,
         when (prop.returnType.classifier) {
             Int::class -> INT
             String::class -> if (annotation.longText) TEXT else STRING
@@ -121,83 +125,99 @@ object ImageVersions : IntIdTable() {
     val isOriginal = bool("isOriginal")
 }
 
-fun initDB() {
-    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-    transaction {
-        SchemaUtils.create(ImageVersions)
-        SchemaUtils.create(participantTable)
+
+object DB {
+    const val url: String = "jdbc:postgresql://127.0.0.1/pobeda"
+    val user: String
+    val password: String
+
+    init {
+        val localPropertiesFile = PathResolver.getResource("local.properties")
+        val properties = Properties().apply {
+            load(localPropertiesFile.openStream())
+        }
+        user = properties["user"] as String
+        password = properties["password"] as String
     }
 }
 
+inline fun <T> database(crossinline block: Transaction.() -> T): T {
+    Database.connect(
+        DB.url,
+        driver = "org.postgresql.Driver",
+        user = DB.user,
+        password = DB.password
+    )
+    return transaction {
+        addLogger(StdOutSqlLogger)
+        block()
+    }
+}
+
+
+fun initDB() = database {
+    SchemaUtils.create(ImageVersions)
+    SchemaUtils.create(participantTable)
+}
+
 @Suppress("UNCHECKED_CAST")
-fun addParticipant(participant: Participant): MutableList<String> {
-    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
+fun addParticipant(participant: Participant): MutableList<String> = database {
     val okList = mutableListOf<String>()
-    transaction {
-        addLogger(StdOutSqlLogger)
-        SchemaUtils.create(participantTable)
-        participantTable.insert(participant)
-        okList += "ok"
-        okList += participantTable.select {
-            participantTable.columns.first { it.name == "fileName" } as Column<String> eq
+    participantTable.insert(participant)
+    okList += "ok"
+    okList += participantTable.select {
+        participantTable.columns.first { it.name == "fileName" } as Column<String> eq
                 participant.fileName
-        }.first()[participantTable.columns.first { it.name == "id" }].toString()
-    }
-    return okList
+    }.first()[participantTable.columns.first { it.name == "id" }].toString()
+    okList
 }
 
 @Suppress("UNCHECKED_CAST")
-fun getAllImages(width: Int, height: Int): List<String> {
+fun getAllImages(width: Int, height: Int): List<String> = database {
     val list = mutableListOf<String>()
-    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-    transaction {
-        addLogger(StdOutSqlLogger)
-        SchemaUtils.create(participantTable)
-        val ivs = ImageVersions.selectAll().map {
-            IV(
-                it[ImageVersions.originalSrc],
-                it[ImageVersions.src],
-                it[ImageVersions.width],
-                it[ImageVersions.height],
-                it[ImageVersions.isOriginal]
-            )
-        }.groupBy {
-            it.originalSrc
-        }
-
-        val participants = participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.DESC)
-
-        for (participant in participants) {
-            var resultSize = PlanarSize(-1, -1)
-            var resultSrc = ""
-            val p = participant[participantTable.columns.first { it.name == "fileName" } as Column<String>]
-            for (version in ivs.getValue(p)) {
-                val src = version.src
-                val w = version.width
-                val h = version.height
-                if (resultSize.width < width && resultSize.height < height &&
-                    w > resultSize.width && h > resultSize.height) {
-                    resultSize = PlanarSize(w, h)
-                    resultSrc = src
-                } else if (resultSize.width >= w && resultSize.height >= h &&
-                    w >= width && h >= height) {
-                    resultSize = PlanarSize(w, h)
-                    resultSrc = src
-                }
-//                println("$resultSrc $w $h $resultSize")
-            }
-            list.add(resultSrc)
-        }
+    val ivs = ImageVersions.selectAll().map {
+        IV(
+            it[ImageVersions.originalSrc],
+            it[ImageVersions.src],
+            it[ImageVersions.width],
+            it[ImageVersions.height],
+            it[ImageVersions.isOriginal]
+        )
+    }.groupBy {
+        it.originalSrc
     }
-    return list
-}
 
-const val dbPassword = "***"
+    val participants =
+        participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.DESC)
+
+    for (participant in participants) {
+        var resultSize = PlanarSize(-1, -1)
+        var resultSrc = ""
+        val p = participant[participantTable.columns.first { it.name == "fileName" } as Column<String>]
+        for (version in ivs.getValue(p)) {
+            val src = version.src
+            val w = version.width
+            val h = version.height
+            if (resultSize.width < width && resultSize.height < height &&
+                w > resultSize.width && h > resultSize.height
+            ) {
+                resultSize = PlanarSize(w, h)
+                resultSrc = src
+            } else if (resultSize.width >= w && resultSize.height >= h &&
+                w >= width && h >= height
+            ) {
+                resultSize = PlanarSize(w, h)
+                resultSrc = src
+            }
+//                println("$resultSrc $w $h $resultSize")
+        }
+        list.add(resultSrc)
+    }
+    list
+}
 
 suspend fun addImageVersions(originalPath: String) {
-    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-    transaction {
-        addLogger(StdOutSqlLogger)
+    database {
         SchemaUtils.create(ImageVersions)
         val originalImageFile = File(originalPath)
         val pureName = originalImageFile.nameWithoutExtension
@@ -206,7 +226,8 @@ suspend fun addImageVersions(originalPath: String) {
             500 x 500 to OUTSIDE,
             400 x 400 to OUTSIDE,
             200 x 200 to OUTSIDE,
-            100 x 100 to OUTSIDE)
+            100 x 100 to OUTSIDE
+        )
         val originalImage = ImageIO.read(originalImageFile)
         ImageVersions.insert {
             it[originalSrc] = originalPath
@@ -217,7 +238,8 @@ suspend fun addImageVersions(originalPath: String) {
         }
         sizes.forEach { tr ->
             if ((tr.second == INSIDE && (originalImage.width > tr.first.width || originalImage.height > tr.first.height)) ||
-                (tr.second == OUTSIDE && (originalImage.width > tr.first.width && originalImage.height > tr.first.height))) {
+                (tr.second == OUTSIDE && (originalImage.width > tr.first.width && originalImage.height > tr.first.height))
+            ) {
                 val newImage = scaleImageByRect(originalImage, tr.first, tr.second)
                 val newDir = "uploads/images/copies" / pureName
                 File(newDir).let { d -> if (!d.exists()) d.mkdirs() }
@@ -244,9 +266,7 @@ suspend fun addImageVersions(originalPath: String) {
 @Suppress("UNCHECKED_CAST")
 fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): List<String> {
     val list = mutableListOf<String>()
-    Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-    transaction {
-        addLogger(StdOutSqlLogger)
+    database {
         SchemaUtils.create(participantTable)
         val originalSrc = ImageVersions.select { ImageVersions.src eq src }.first()[ImageVersions.originalSrc]
         var resultSrc = ""
@@ -256,11 +276,13 @@ fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): 
             val w = version[ImageVersions.width]
             val h = version[ImageVersions.height]
             if (resultSize.width < width && resultSize.height < height &&
-                w > resultSize.width && h > resultSize.height) {
+                w > resultSize.width && h > resultSize.height
+            ) {
                 resultSize = PlanarSize(w, h)
                 resultSrc = s
             } else if (resultSize.width >= w && resultSize.height >= h &&
-                w >= width && h >= height) {
+                w >= width && h >= height
+            ) {
                 resultSize = PlanarSize(w, h)
                 resultSrc = s
             }
@@ -268,7 +290,9 @@ fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): 
         }
         list.add(resultSrc)
         if (all) {
-            val participant = participantTable.select { participantTable.columns.first { it.name == "fileName" } as Column<String> eq originalSrc }.first()
+            val participant =
+                participantTable.select { participantTable.columns.first { it.name == "fileName" } as Column<String> eq originalSrc }
+                    .first()
             list += participant[participantTable.columns.first { it.name == "surname" } as Column<String>]
             list += participant[participantTable.columns.first { it.name == "name" } as Column<String>]
             list += participant[participantTable.columns.first { it.name == "age" } as Column<Int>].toString()

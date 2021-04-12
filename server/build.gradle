@@ -35,6 +35,7 @@ dependencies {
     implementation 'org.postgresql:postgresql:42.2.2'
     compile group: 'javax.mail', name: 'mail', version: '1.4.1'
 //    compile files('marvin/framework/marvin_1.5.5.jar')
+    compile 'com.yandex.android:disk-restapi-sdk:1.0'
 }
 
 jar {
