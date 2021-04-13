@@ -82,7 +82,6 @@ fun Route.getYamlAPI() {
 }
 
 fun sendToYandex(file: File, path: String): Boolean {
-
     val yandex = RestClient(Credentials("polystorage", ""))
     return try {
         val link = yandex.getUploadLink("pobeda/2021/uploads/images/test.png", true)
@@ -108,7 +107,6 @@ fun Route.loadParticipantFileAPI() {
                 val ext = File(fileData.originalFileName).extension
                 val newPath = dir / subDir / fileData.namePrefix usc randomString(7) dot ext
                 File(dir / files[0]).renameTo(File(newPath))
-                sendToYandex(File(newPath), newPath)
                 if (fileData.fileType == "file") addImageVersions(newPath)
                 answer(Answer(OK, newPath), String.serializer())
             } catch (e: NoSuchElementException) {

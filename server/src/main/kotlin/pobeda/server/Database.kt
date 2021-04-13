@@ -123,6 +123,7 @@ object ImageVersions : IntIdTable() {
     val width = integer("width")
     val height = integer("height")
     val isOriginal = bool("isOriginal")
+    val storage = varchar("storage", 256).default("server")
 }
 
 
@@ -229,13 +230,20 @@ suspend fun addImageVersions(originalPath: String) {
             100 x 100 to OUTSIDE
         )
         val originalImage = ImageIO.read(originalImageFile)
+
+        val originalStorage = if (sendToYandex(originalImageFile, originalPath)) "yandex".also {
+            originalImageFile.delete()
+        } else "server"
+
         ImageVersions.insert {
             it[originalSrc] = originalPath
             it[src] = originalPath
             it[width] = originalImage.width
             it[height] = originalImage.height
             it[isOriginal] = true
+            it[storage] = originalStorage
         }
+
         sizes.forEach { tr ->
             if ((tr.second == INSIDE && (originalImage.width > tr.first.width || originalImage.height > tr.first.height)) ||
                 (tr.second == OUTSIDE && (originalImage.width > tr.first.width && originalImage.height > tr.first.height))
@@ -248,7 +256,9 @@ suspend fun addImageVersions(originalPath: String) {
 
                 ImageIO.write(newImage, "PNG", newFile)
 
-                sendToYandex(newFile, newPath)
+                val imageStorage = if (sendToYandex(newFile, newPath)) "yandex".also {
+                    newFile.delete()
+                } else "server"
 
                 ImageVersions.insert {
                     it[originalSrc] = originalPath
@@ -256,9 +266,10 @@ suspend fun addImageVersions(originalPath: String) {
                     it[width] = newImage.width
                     it[height] = newImage.height
                     it[isOriginal] = false
+                    it[storage] = imageStorage
                 }
             }
-            println("added iv")
+//            println("added iv")
         }
     }
 }
