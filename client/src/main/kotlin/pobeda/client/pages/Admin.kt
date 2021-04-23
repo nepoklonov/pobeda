@@ -5,8 +5,8 @@ import kotlinx.css.properties.border
 import kotlinx.css.properties.borderRight
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onInputFunction
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.w3c.dom.HTMLInputElement
 import pobeda.client.gray70Color
 import pobeda.client.send
@@ -81,7 +81,7 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                 setState {
                     sent = true
                 }
-                Request.ParticipantsGetAll(state.password, state.from.toInt()).send(String.serializer().list.list.list) {
+                Request.ParticipantsGetAll(state.password, state.from.toInt()).send(ListSerializer(ListSerializer(ListSerializer(String.serializer())))) {
                     setState { participants = it }
                 }
             }
@@ -128,7 +128,7 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                                 val newFrom = (state.from.toInt() + number)
                                 setState { from = newFrom.toString() }
                                 setState { participants = listOf() }
-                                Request.ParticipantsGetAll(state.password, newFrom).send(String.serializer().list.list.list) {
+                                Request.ParticipantsGetAll(state.password, newFrom).send(ListSerializer(ListSerializer(ListSerializer(String.serializer())))) {
                                     setState { participants = it }
                                 }
                             }

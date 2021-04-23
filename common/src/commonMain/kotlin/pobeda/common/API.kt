@@ -1,8 +1,6 @@
 package pobeda.common
 
-import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 import pobeda.common.interpretation.YamlRef
 
 enum class Method(val methodName: String) {
@@ -16,17 +14,6 @@ enum class Method(val methodName: String) {
 //    GetImageVersion("api/images/get-version")
 }
 
-//inline fun <R : Request> Map<String, String>.getAll(vararg params: String, action: (List<String>) -> R): R {
-//    require(params.all { it in this })
-//    return action(params.map { getValue(it) })
-//}
-
-@UseExperimental(ImplicitReflectionSerializer::class)
-inline fun <reified T : Any> T.serialize() = json.stringify(T::class.serializer(), this)
-
-@UseExperimental(ImplicitReflectionSerializer::class)
-inline fun <reified T : Any> String.deserialize() = json.parse(T::class.serializer(), this)
-
 @Serializable
 sealed class Request(val method: Method) {
 
@@ -37,7 +24,10 @@ sealed class Request(val method: Method) {
     class ImagesGetInfo(val src: String, val width: Int, val height: Int, val all: Boolean) : Request(Method.GetImageInfo)
 
     @Serializable
-    class ImagesGetAll(val width: Int, val height: Int) : Request(Method.GetImages)
+    class ImagesGetAll(val width: Int, val height: Int, val page: Int, val size: Int) : Request(Method.GetImages)
+
+    @Serializable
+    class AllImages(val images: List<String>, val amount: Int)
 
     @Serializable
     class FileUpload(val filesData: List<FileData>) : Request(Method.FileUpload) {

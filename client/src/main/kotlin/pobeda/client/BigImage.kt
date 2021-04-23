@@ -2,8 +2,8 @@ package pobeda.client
 
 import kotlinx.css.*
 import kotlinx.html.js.onClickFunction
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import pobeda.client.stucture.YamlListState
 import pobeda.client.stucture.initYamlListState
 import pobeda.client.stucture.updateYamlListState
@@ -31,7 +31,7 @@ class BigImageComponent : RComponent<BigImageProps, YamlListState<String>>() {
     override fun RBuilder.render() {
         if (state.yaml.size == 0) {
             Request.ImagesGetInfo(props.src, 500, 500, true)
-                .send(String.serializer().list, ::updateYamlListState)
+                .send(ListSerializer(String.serializer()), ::updateYamlListState)
         }
         styledDiv {
             css {

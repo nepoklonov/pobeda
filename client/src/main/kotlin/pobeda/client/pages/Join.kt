@@ -5,7 +5,7 @@ import kotlinx.html.FormMethod
 import kotlinx.html.InputType
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onSubmitFunction
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.serializer
 import org.w3c.dom.events.Event
 import org.w3c.xhr.FormData
 import pobeda.client.elements.input.CheckBoxInputComponent
@@ -29,7 +29,7 @@ import styled.StyledDOMBuilder
 import styled.css
 import styled.styledForm
 import styled.styledP
-import kotlin.browser.window
+import kotlinx.browser.window
 
 val types = mutableListOf("text", "checkbox", "file", "submit")
 val inputClasses = mutableListOf(TextInputComponent::class,

@@ -3,7 +3,7 @@ package pobeda.client.stucture
 import kotlinx.css.*
 import kotlinx.css.properties.LineHeight
 import kotlinx.css.properties.borderTop
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.ListSerializer
 import pobeda.client.elementInBox
 import pobeda.client.send
 import pobeda.common.Logo
@@ -22,7 +22,7 @@ import styled.styledSpan
 class FooterComponent : RComponent<RProps, YamlListState<Logo>>() {
     init {
         initYamlListState()
-        Request.GetYaml(YamlRef.LogosYaml).send(Logo.serializer().list, ::updateYamlListState)
+        Request.GetYaml(YamlRef.LogosYaml).send(ListSerializer(Logo.serializer()), ::updateYamlListState)
     }
     override fun RBuilder.render() {
         elementInBox(228, 3264, 2132, 3490) {

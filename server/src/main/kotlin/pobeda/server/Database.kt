@@ -3,12 +3,15 @@ package pobeda.server
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntIdTable
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import pobeda.common.ModelField
 import pobeda.common.Participant
 import pobeda.common.div
 import pobeda.common.dot
+import pobeda.common.interpretation.FileRef
 import pobeda.common.interpretation.PlanarSize
+import pobeda.common.interpretation.Scale
 import pobeda.common.interpretation.ScaleType.INSIDE
 import pobeda.common.interpretation.ScaleType.OUTSIDE
 import pobeda.common.interpretation.x
@@ -114,7 +117,8 @@ data class IV(
     val src: String,
     val width: Int,
     val height: Int,
-    val isOriginal: Boolean
+    val isOriginal: Boolean,
+    val url: String
 )
 
 object ImageVersions : IntIdTable() {
@@ -124,6 +128,19 @@ object ImageVersions : IntIdTable() {
     val height = integer("height")
     val isOriginal = bool("isOriginal")
     val storage = varchar("storage", 256).default("server")
+    val url = text("url")
+}
+
+object YandexCredentials {
+    val token: String
+
+    init {
+        val localPropertiesFile = PathResolver.getResource("local.properties")
+        val properties = Properties().apply {
+            load(localPropertiesFile.openStream())
+        }
+        token = properties["token"] as String
+    }
 }
 
 
@@ -157,8 +174,8 @@ inline fun <T> database(crossinline block: Transaction.() -> T): T {
 
 
 fun initDB() = database {
-    SchemaUtils.create(ImageVersions)
-    SchemaUtils.create(participantTable)
+    SchemaUtils.createMissingTablesAndColumns(ImageVersions)
+    SchemaUtils.createMissingTablesAndColumns(participantTable)
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -173,51 +190,53 @@ fun addParticipant(participant: Participant): MutableList<String> = database {
     okList
 }
 
-@Suppress("UNCHECKED_CAST")
-fun getAllImages(width: Int, height: Int): List<String> = database {
-    val list = mutableListOf<String>()
-    val ivs = ImageVersions.selectAll().map {
-        IV(
-            it[ImageVersions.originalSrc],
-            it[ImageVersions.src],
-            it[ImageVersions.width],
-            it[ImageVersions.height],
-            it[ImageVersions.isOriginal]
-        )
-    }.groupBy {
-        it.originalSrc
-    }
+fun chooseBestImageVersionSize(id: Int, info: List<Pair<PlanarSize, String>>, width: Int, height: Int): String {
+    var resultSize = PlanarSize(-1, -1)
+    var resultUrl = ""
 
-    val participants =
-        participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.DESC)
-
-    for (participant in participants) {
-        var resultSize = PlanarSize(-1, -1)
-        var resultSrc = ""
-        val p = participant[participantTable.columns.first { it.name == "fileName" } as Column<String>]
-        for (version in ivs.getValue(p)) {
-            val src = version.src
-            val w = version.width
-            val h = version.height
-            if (resultSize.width < width && resultSize.height < height &&
-                w > resultSize.width && h > resultSize.height
-            ) {
-                resultSize = PlanarSize(w, h)
-                resultSrc = src
-            } else if (resultSize.width >= w && resultSize.height >= h &&
-                w >= width && h >= height
-            ) {
-                resultSize = PlanarSize(w, h)
-                resultSrc = src
-            }
-//                println("$resultSrc $w $h $resultSize")
+    for (version in info) {
+        val url = version.second
+        val w = version.first.width
+        val h = version.first.height
+        if (resultSize.width < width && resultSize.height < height &&
+            w > resultSize.width && h > resultSize.height
+        ) {
+            resultSize = w x h
+            resultUrl = url
+        } else if (resultSize.width >= w && resultSize.height >= h &&
+            w >= width && h >= height
+        ) {
+            resultSize = PlanarSize(w, h)
+            resultUrl = url
         }
-        list.add(resultSrc)
     }
-    list
+    return resultUrl
 }
 
-suspend fun addImageVersions(originalPath: String) {
+@Suppress("UNCHECKED_CAST")
+fun getAllImages(width: Int, height: Int, page: Int, size: Int): List<String> = database {
+    participantTable.innerJoin(ImageVersions, { participantTable.getColumn("fileName") as Column<String> }, { src })
+        .slice(
+            participantTable.getColumn("id"),
+            ImageVersions.url,
+            ImageVersions.width,
+            ImageVersions.height,
+        ).select { ImageVersions.src eq participantTable.getColumn("fileName") }
+        .orderBy(participantTable.getColumn("id"), SortOrder.DESC)
+        .limit(size, page * size)
+        .groupBy(
+            keySelector = {
+                it[participantTable.getColumn("id") as Column<Int>]
+            },
+            valueTransform = {
+                it[ImageVersions.width] x it[ImageVersions.height] to it[ImageVersions.url]
+            }
+        ).map { (id, info) ->
+            chooseBestImageVersionSize(id, info, width, height)
+        }
+}
+
+fun addImageVersions(originalPath: String) {
     database {
         SchemaUtils.create(ImageVersions)
         val originalImageFile = File(originalPath)
@@ -231,9 +250,11 @@ suspend fun addImageVersions(originalPath: String) {
         )
         val originalImage = ImageIO.read(originalImageFile)
 
-        val originalStorage = if (sendToYandex(originalImageFile, originalPath)) "yandex".also {
-            originalImageFile.delete()
-        } else "server"
+
+        val sendResult = sendToYandex(originalImageFile, originalPath)
+        val originalStorage = sendResult.storage.also {
+            if (it == "yandex") originalImageFile.delete()
+        }
 
         ImageVersions.insert {
             it[originalSrc] = originalPath
@@ -242,6 +263,7 @@ suspend fun addImageVersions(originalPath: String) {
             it[height] = originalImage.height
             it[isOriginal] = true
             it[storage] = originalStorage
+            it[url] = sendResult.url
         }
 
         sizes.forEach { tr ->
@@ -256,9 +278,15 @@ suspend fun addImageVersions(originalPath: String) {
 
                 ImageIO.write(newImage, "PNG", newFile)
 
-                val imageStorage = if (sendToYandex(newFile, newPath)) "yandex".also {
-                    newFile.delete()
-                } else "server"
+                val sendResultVersion = sendToYandex(newFile, newPath)
+                val imageStorage = sendResultVersion.storage.also {
+                    if (it == "yandex") {
+                        newFile.delete()
+                        if(newFile.parentFile.listFiles()?.toList()?.isEmpty() == true) {
+                            newFile.parentFile.delete()
+                        }
+                    }
+                }
 
                 ImageVersions.insert {
                     it[originalSrc] = originalPath
@@ -267,6 +295,7 @@ suspend fun addImageVersions(originalPath: String) {
                     it[height] = newImage.height
                     it[isOriginal] = false
                     it[storage] = imageStorage
+                    it[url] = sendResultVersion.url
                 }
             }
 //            println("added iv")
@@ -278,28 +307,35 @@ suspend fun addImageVersions(originalPath: String) {
 fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): List<String> {
     val list = mutableListOf<String>()
     database {
-        SchemaUtils.create(participantTable)
-        val originalSrc = ImageVersions.select { ImageVersions.src eq src }.first()[ImageVersions.originalSrc]
+        var originalUrl = ""
+        val originalSrc = ImageVersions.select { ImageVersions.src eq src or (ImageVersions.url eq src) }.first().let {
+            originalUrl = it[ImageVersions.url]
+            it[ImageVersions.originalSrc]
+        }
         var resultSrc = ""
+        var resultUrl = ""
         var resultSize = PlanarSize(-1, -1)
         for (version in ImageVersions.select { ImageVersions.originalSrc eq originalSrc }) {
             val s = version[ImageVersions.src]
+            val u = version[ImageVersions.url]
             val w = version[ImageVersions.width]
             val h = version[ImageVersions.height]
             if (resultSize.width < width && resultSize.height < height &&
                 w > resultSize.width && h > resultSize.height
             ) {
                 resultSize = PlanarSize(w, h)
+                resultUrl = u
                 resultSrc = s
             } else if (resultSize.width >= w && resultSize.height >= h &&
                 w >= width && h >= height
             ) {
                 resultSize = PlanarSize(w, h)
+                resultUrl = u
                 resultSrc = s
             }
-            println("-- $resultSrc $w $h $resultSize $width $height")
+            println("-- $resultSrc $resultUrl $w $h $resultSize $width $height")
         }
-        list.add(resultSrc)
+        list.add(resultUrl)
         if (all) {
             val participant =
                 participantTable.select { participantTable.columns.first { it.name == "fileName" } as Column<String> eq originalSrc }
@@ -309,7 +345,7 @@ fun getOpenParticipantInfo(src: String, width: Int, height: Int, all: Boolean): 
             list += participant[participantTable.columns.first { it.name == "age" } as Column<Int>].toString()
             list += participant[participantTable.columns.first { it.name == "city" } as Column<String>]
             list += participant[participantTable.columns.first { it.name == "title" } as Column<String>]
-            list += originalSrc
+            list += originalUrl
         }
     }
     println(list.toString())

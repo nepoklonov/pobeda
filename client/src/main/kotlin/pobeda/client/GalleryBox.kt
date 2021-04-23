@@ -3,8 +3,8 @@ package pobeda.client
 import kotlinx.css.*
 import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.w3c.dom.Element
 import pobeda.client.stucture.YamlListState
 import pobeda.client.stucture.updateYamlListState
@@ -28,8 +28,8 @@ interface GalleryBoxState : RState {
 
 
 val updateYaml: RComponent<out RProps, out YamlListState<String>>.(Int, Int) -> Unit = { width, height ->
-    Request.ImagesGetAll(width, height).send(String.serializer().list) {
-        updateYamlListState(it)
+    Request.ImagesGetAll(width, height, 0, 100).send(Request.AllImages.serializer()) {
+        updateYamlListState(it.images)
         js("blz()")
         Unit
     }

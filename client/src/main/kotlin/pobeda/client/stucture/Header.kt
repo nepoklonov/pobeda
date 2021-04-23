@@ -4,8 +4,8 @@ import kotlinx.css.*
 import kotlinx.css.properties.deg
 import kotlinx.css.properties.rotate
 import kotlinx.css.properties.transform
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import pobeda.client.*
 import pobeda.common.Request
 import pobeda.common.getPluralForm
@@ -15,24 +15,26 @@ import pobeda.common.info.PageInfo
 import pobeda.common.quote
 import react.RBuilder
 import react.RComponent
-import react.router.dom.navLink
+import react.router.dom.routeLink
+import react.router.dom.routeLink
+import react.setState
 import styled.css
 import styled.styledSpan
 import kotlin.js.Date
 
 val months = arrayOf(
-        "января",
-        "февраля",
-        "марта",
-        "апреля",
-        "мая",
-        "июня",
-        "июля",
-        "августа",
-        "сентября",
-        "октября",
-        "ноября",
-        "декабря"
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря"
 )
 
 data class Today(val day: String, val month: String, val year: String)
@@ -46,9 +48,13 @@ const val msInDay = 1000 * 3600 * 24
 
 fun getDaysLeft() = (-Date.now().toLong() / msInDay + DAY_OF_THE_END / msInDay).toInt()
 
-class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
+interface HeaderState : YamlListState<String> {
+    var amount: String
+}
+
+class HeaderComponent : RComponent<RoutedProps, HeaderState>() {
     private fun RBuilder.headerNavElement(to: String, text: String, userStyle: RuleSet = {}) = styledSpan {
-        navLink(to) {
+        routeLink(to) {
             +"| "
             +text
             +" |"
@@ -62,8 +68,12 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
     }
 
     init {
-        Request.ImagesGetAll(0, 0).send(String.serializer().list, ::updateYamlListState)
+        Request.ImagesGetAll(0, 0, 0, 100).send(Request.AllImages.serializer()) {
+            updateYamlListState(it.images)
+            setState { amount = it.amount.toString() }
+        }
         initYamlListState()
+        state.amount = "..."
     }
 
     override fun RBuilder.render() {
@@ -90,13 +100,13 @@ class HeaderComponent : RComponent<RoutedProps, YamlListState<String>>() {
                 labelInBox("Акция завершена", 1066, 210, 1480, 280)
             }
         }
-        (state.yaml.size).also {
-            labelInBox(it.toString(), 1626, 210, 1839, 280) {
+        state.amount.also {
+            labelInBox(it, 1626, 210, 1839, 280) {
                 +MainStyles.orangeText
             }
-            labelInBox(it.getPluralForm("участник", "участника", "участников"), 1901, 210, 2155, 280)
+            labelInBox((it.toIntOrNull() ?: 5).getPluralForm("участник", "участника", "участников"), 1901, 210, 2155, 280)
         }
-        navLink(to = PageInfo.Main.url) {
+        routeLink(to = PageInfo.Main.url) {
             imageInBox(FileInfo.Image.mainLogo.src, 240, 402, 743, 905) {
                 width = 70.pct
                 position = Position.relative

@@ -1,9 +1,9 @@
 package pobeda.common.interpretation
 
-import kotlinx.serialization.enumMembers
 import pobeda.common.info.General
 import pobeda.common.interpretation.ScaleType.INSIDE
 import pobeda.common.interpretation.ScaleType.OUTSIDE
+import kotlin.reflect.KClass
 
 data class PlanarSize(val width: Int, val height: Int) {
     constructor(w: Number, h: Number) : this(w.toInt(), h.toInt())
@@ -50,28 +50,28 @@ class Image<out T : ScaleContainer>(val original: FileRef, val scales: List<T>) 
         }
 
         inline operator fun <reified T> invoke(originalPath: FileRef): Image<T> where T : ScaleContainer, T : Enum<T> {
-            return Image(originalPath, *T::class.enumMembers())
+            return Image(originalPath, *enumValues())
         }
     }
 }
 
 object Images {
     val mainBackground: Image<SingleScale> =
-        Image(ImageDirs.design file "back.jpg", scaleByWidth(General.width))
+            Image(ImageDirs.design file "back.jpg", scaleByWidth(General.width))
 
     val mainLogo: Image<SingleScale> =
-        Image(ImageDirs.design file "main-logo.png", 350 x 350 put OUTSIDE)
+            Image(ImageDirs.design file "main-logo.png", 350 x 350 put OUTSIDE)
 
     val mapImage: Image<SingleScale> =
-        Image(ImageDirs.design file "map.png", 0 x 0 put INSIDE)
+            Image(ImageDirs.design file "map.png", 0 x 0 put INSIDE)
 
     val mapWithBack: Image<SingleScale> =
-        Image(ImageDirs.design file "map-with-back.png", scaleByWidth(1576 * General.scale))
+            Image(ImageDirs.design file "map-with-back.png", scaleByWidth(1576 * General.scale))
 
     val defender: Image<SingleScale> =
-        Image(ImageDirs.design file "defender.png", scaleByWidth(330 * General.scale))
+            Image(ImageDirs.design file "defender.png", scaleByWidth(330 * General.scale))
 
     val lady: Image<SingleScale> =
-        Image(ImageDirs.design file "arshinova.png", scaleByWidth(330 * General.scale))
+            Image(ImageDirs.design file "arshinova.png", scaleByWidth(330 * General.scale))
 }
 

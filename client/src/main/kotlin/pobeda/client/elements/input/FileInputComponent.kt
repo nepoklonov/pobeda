@@ -12,8 +12,8 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onMouseOutFunction
 import kotlinx.html.js.onMouseOverFunction
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import org.w3c.files.get
@@ -34,12 +34,14 @@ import styled.styledDiv
 interface FileInputState : InputItemState {
     var moused: Boolean
     var miniFile: String
+    var isLoading: Boolean
 }
 
 class FileInputComponent : InputComponent<FileInputState>() {
     init {
         state.moused = false
         state.miniFile = ""
+        state.isLoading = false
     }
 
     private fun mouseIn(isMouseIn: Boolean): (Event) -> Unit = { _ -> setState { moused = isMouseIn } }
@@ -54,6 +56,7 @@ class FileInputComponent : InputComponent<FileInputState>() {
                 props.valueUpdate(props.name, file.name)
                 val jsFile = JSFile(props.name, file, randomString(10))
                 val fileData = FileData(props.name, file.name, props.time)
+                setState { isLoading = true }
                 Request.FileUpload(fileData).send(String.serializer(), listOf(jsFile)) {
                     props.valueUpdate("old-" + props.name, file.name)
                     props.valueUpdate(props.name, it)
@@ -62,11 +65,13 @@ class FileInputComponent : InputComponent<FileInputState>() {
                         moused = false
                     }
                     if (state.miniFile == "") {
-                        Request.ImagesGetInfo(InputField.file.value, 120, 80, false).send(String.serializer().list) {
+//                        Request.ImagesGetInfo(InputField.file.value, 120, 80, false).send(ListSerializer(String.serializer())) {
                             setState {
-                                miniFile = it[0]
+                                isLoading = false
+//                                miniFile = it[0]
+                                miniFile = InputField.file.value
                             }
-                        }
+//                        }
                     }
                 }
             }
@@ -129,6 +134,8 @@ class FileInputComponent : InputComponent<FileInputState>() {
                     backgroundPosition = "center center"
                     flexGrow = 1.0
                 }
+            } else if (state.isLoading) {
+                +"Идёт загрузка..."
             } else if (state.isEmpty) {
                 +props.title
             } else {
