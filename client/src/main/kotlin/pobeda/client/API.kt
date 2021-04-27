@@ -1,6 +1,5 @@
 package pobeda.client
 
-import kotlinx.serialization.KSerializer
 import org.w3c.files.Blob
 import org.w3c.xhr.FormData
 import org.w3c.xhr.XMLHttpRequest
@@ -8,9 +7,9 @@ import pobeda.common.Answer
 import pobeda.common.Request
 import pobeda.common.interpretation.Image
 import pobeda.common.interpretation.ScaleContainer
-import pobeda.common.json
-import pobeda.common.serialize
-import kotlin.browser.window
+import kotlinx.browser.window
+import kotlinx.serialization.*
+import kotlinx.serialization.json.Json
 
 inline fun callAPI(destination: String, params: FormData, crossinline action: XMLHttpRequest.() -> Unit) {
     val url = "${window.location.origin}/$destination"
@@ -32,7 +31,7 @@ fun String.toFormData(): FormData =
 class JSFile(val name: String, val value: Blob, val filename: String)
 
 inline fun <reified R : Request> R.send(files: List<JSFile> = listOf(), crossinline action: (String) -> Unit) {
-    callAPI(method.methodName, serialize().toFormData().apply {
+    callAPI(method.methodName, Json.encodeToString(this).toFormData().apply {
         files.forEach {
             append(it.name, it.value, it.filename)
         }
@@ -42,12 +41,12 @@ inline fun <reified R : Request> R.send(files: List<JSFile> = listOf(), crossinl
 }
 
 inline fun <reified R : Request, A> R.send(kSerializer: KSerializer<A>, files: List<JSFile> = listOf(), crossinline action: (A) -> Unit) = send(files) {
-    val answer = json.parse(Answer.serializer(kSerializer), it)
+    val answer = Json.decodeFromString(Answer.serializer(kSerializer), it)
     action(answer.body)
 }
 
 inline fun <reified R : Request, A> R.send(kSerializer: KSerializer<A>, crossinline action: (A) -> Unit) = send(listOf()) {
-    val answer = json.parse(Answer.serializer(kSerializer), it)
+    val answer = Json.decodeFromString(Answer.serializer(kSerializer), it)
     action(answer.body)
 }
 

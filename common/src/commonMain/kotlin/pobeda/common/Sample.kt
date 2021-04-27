@@ -1,7 +1,6 @@
 package pobeda.common
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 
 fun Int.getPluralForm(one: String, two: String, five: String) = when {
     this in 10..20 -> five
@@ -17,7 +16,7 @@ fun randomString(amount: Int) = (('0'..'9') + ('a'..'z')).let {
 }.joinToString("")
 
 
-val json = Json(JsonConfiguration.Stable)
+val json = Json
 
 infix fun <T, R> List<T>.associateBy(base: List<R>): Map<R, T> {
     require(size == base.size) { "Lists' size must be equal" }

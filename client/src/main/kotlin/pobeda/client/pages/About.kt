@@ -12,7 +12,7 @@ import react.RBuilder
 import react.dom.a
 import react.dom.br
 import react.dom.h3
-import react.router.dom.navLink
+import react.router.dom.routeLink
 import styled.*
 
 fun RBuilder.orangeSpan(block: StyledDOMBuilder<SPAN>.() -> Unit) = styledSpan {
@@ -105,7 +105,7 @@ class AboutComponent : StandardPageComponent<PageState>() {
             }
             indentedP {
                 +"Подготовить рисунок и при желании написать небольшой текст (эссе), рассказывающее о судьбе родных и близких в годы войны; загрузить работу, нажав кнопку "
-                navLink("") {
+                routeLink("") {
                     +"«Принять участие»"
                 }
                 +" и заполнив анкету на сайте Акции."

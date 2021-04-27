@@ -60,7 +60,4 @@ data class Participant(
 
     @ModelField("Текст эссе (по желанию)", longText = true, nullable = true)
     val essayText: String
-) {
-
-
-}
+)

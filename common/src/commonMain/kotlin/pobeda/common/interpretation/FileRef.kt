@@ -1,7 +1,8 @@
 package pobeda.common.interpretation
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.serializer
 import pobeda.common.*
 import pobeda.common.interpretation.DirRef.Companion.images
@@ -33,12 +34,12 @@ fun getYamlRefByName(name: String): YamlRef {
 }
 
 enum class YamlRef(val yamlName: String, val serializer: KSerializer<out Any>) {
-    ResourcesYaml("resources", Resource.serializer().list),
-    SymbolsYaml("symbols", String.serializer().list),
+    ResourcesYaml("resources", ListSerializer(Resource.serializer())),
+    SymbolsYaml("symbols", ListSerializer(String.serializer())),
     TeamYaml("team", Team.serializer()),
     SmiYaml("smi", Smi.serializer()),
-    ContactsYaml("contacts", Contact.serializer().list),
-    LogosYaml("logos", Logo.serializer().list);
+    ContactsYaml("contacts", ListSerializer(Contact.serializer())),
+    LogosYaml("logos", ListSerializer(Logo.serializer()));
 }
 
 object ImageDirs {

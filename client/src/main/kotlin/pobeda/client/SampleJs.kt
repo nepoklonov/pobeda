@@ -15,9 +15,8 @@ import react.dom.render
 import react.router.dom.browserRouter
 import react.router.dom.route
 import react.router.dom.switch
-import styled.StyledComponents
 import styled.injectGlobal
-import kotlin.browser.document
+import kotlinx.browser.document
 import kotlin.js.Date
 import kotlin.reflect.KClass
 
@@ -49,7 +48,7 @@ fun RElementBuilder<RProps>.primitiveRoute(
 }
 
 fun main() {
-    StyledComponents.injectGlobal {
+    injectGlobal {
         h2 {
             fontSize = 30.px
             margin(20.px, 0.px, 20.px, 30.px)

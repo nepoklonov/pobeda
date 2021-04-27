@@ -25,7 +25,7 @@ fun Route.generateLoadingHTML(path: String) {
                 }
                 script(src = "/js/blazy.min.js") {}
                 script(src = "/js/b.js") {}
-                script(src = "/main.bundle.js") {}
+                script(src = "/resources/client.js") {}
             }
         }
     }

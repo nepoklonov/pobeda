@@ -9,7 +9,7 @@ import pobeda.common.info.PageInfo
 import react.RBuilder
 import react.RComponent
 import react.RState
-import react.router.dom.navLink
+import react.router.dom.routeLink
 import styled.css
 import styled.styledSpan
 
@@ -24,7 +24,7 @@ class LeftNavComponent : RComponent<RoutedProps, RState>() {
                     if (props.current == to) +MainStyles.current
                     +MainStyles.leftNavElement
                 }
-                navLink(to) {
+                routeLink(to) {
                     +text
                 }
             }

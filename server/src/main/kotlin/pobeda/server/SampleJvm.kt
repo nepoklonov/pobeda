@@ -1,19 +1,15 @@
 package pobeda.server
 
-import io.ktor.application.Application
-import io.ktor.application.ApplicationCall
-import io.ktor.application.install
-import io.ktor.features.CORS
+import io.ktor.application.*
+import io.ktor.features.*
 import io.ktor.http.ContentType
-import io.ktor.http.content.file
-import io.ktor.http.content.files
-import io.ktor.http.content.static
+import io.ktor.http.content.*
 import io.ktor.response.respondText
-import io.ktor.routing.Route
-import io.ktor.routing.routing
+import io.ktor.routing.*
 import kotlinx.css.CSSBuilder
 import pobeda.server.generated.generateLoadingHTML
 import pobeda.server.generated.generateStylesCSS
+import pobeda.server.openFolders
 
 fun Route.openFolder(folderName: String) {
     static("/$folderName") {
@@ -27,17 +23,24 @@ fun Route.openFolders(vararg folderNames: String) {
     }
 }
 
+fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
+
 @Suppress("unused")
-fun Application.main() {
+fun Application.main(testing: Boolean = false) {
     install(CORS) {
         anyHost()
         allowCredentials = true
     }
+    val client = io.ktor.client.HttpClient()
     routing {
         openFolders("images", "smi", "documents", "fonts", "yaml", "uploads", "js")
 
-        static("/") {
-            file("main.bundle.js")
+//        static("/") {
+//            file("/resources/client.js")
+//        }
+
+        static("resources") {
+            resources("/")
         }
 
         generateLoadingHTML("{...}")
@@ -48,6 +51,7 @@ fun Application.main() {
         getYamlAPI()
         getImagesAPI()
         loadParticipantFileAPI()
+        yandexAllowAPI(client)
         loadAdminParticipantFileAPI()
         loadFormAPI()
         getImageInfoAPI()

@@ -1,8 +1,8 @@
 package pobeda.client.pages
 
 import kotlinx.css.*
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import pobeda.client.send
 import pobeda.client.stucture.StandardPageComponent
 import pobeda.client.stucture.YamlListState
@@ -18,7 +18,7 @@ import styled.styledImg
 class SymbolsComponent : StandardPageComponent<YamlListState<String>>() {
     init {
         initYamlListState()
-        Request.GetYaml(YamlRef.SymbolsYaml).send(String.serializer().list, ::updateYamlListState)
+        Request.GetYaml(YamlRef.SymbolsYaml).send(ListSerializer(String.serializer()), ::updateYamlListState)
     }
 
     override fun StyledDOMBuilder<*>.page() {

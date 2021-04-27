@@ -1,31 +1,48 @@
 package pobeda.server
 
-import com.charleskorn.kaml.Yaml
-import io.ktor.application.ApplicationCall
-import io.ktor.application.call
-import io.ktor.http.content.PartData
-import io.ktor.http.content.readAllParts
-import io.ktor.http.content.streamProvider
-import io.ktor.request.receiveMultipart
-import io.ktor.response.respondText
-import io.ktor.routing.Route
-import io.ktor.routing.post
-import io.ktor.util.pipeline.PipelineContext
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.list
-import kotlinx.serialization.serializer
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.transactions.transaction
+//import com.charleskorn.kaml.Yaml
+import com.yandex.disk.rest.Credentials
+import com.yandex.disk.rest.FileDownloadListener
+import com.yandex.disk.rest.ResourcesArgs
+import com.yandex.disk.rest.RestClient
+import com.yandex.disk.rest.exceptions.http.HttpCodeException
+import com.yandex.disk.rest.retrofit.CloudApi
+import io.ktor.application.*
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.http.content.*
+import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.util.*
+import io.ktor.util.pipeline.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.jvm.javaio.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.html.currentTimeMillis
+import kotlinx.serialization.*
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import pobeda.common.*
 import pobeda.common.AnswerType.OK
 import pobeda.common.AnswerType.WRONG
 import pobeda.common.interpretation.PlanarSize
 import pobeda.common.interpretation.getFileRefByName
-import java.io.BufferedInputStream
 import java.io.File
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URLEncoder
+import kotlin.reflect.KProperty1
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.isAccessible
 
 
 inline fun <reified T : Request> List<PartData>.receiveForm(): T {
@@ -36,8 +53,9 @@ inline fun <reified T : Request> List<PartData>.receiveForm(): T {
             part.dispose()
         }
     }
-    return result?.deserialize() ?: error("FUCK YOU")
+    return Json.decodeFromString(result ?: error("FUCK YOU")) ?: error("FUCK YOU")
 }
+
 
 suspend inline fun <reified T : Request> PipelineContext<Unit, ApplicationCall>.receiveOnlyForm(): T =
     call.receiveMultipart().readAllParts().receiveForm()
@@ -55,7 +73,7 @@ fun List<PartData>.receiveFiles(dir: String = "uploads") =
     }.toList()
 
 suspend fun <T> PipelineContext<Unit, ApplicationCall>.answer(answer: Answer<T>, kSerializer: KSerializer<T>) {
-    call.respondText(json.stringify(Answer.serializer(kSerializer), answer))
+    call.respondText(Json.encodeToString(Answer.serializer(kSerializer), answer))
 }
 
 @Suppress("UNCHECKED_CAST")
@@ -65,33 +83,121 @@ fun Route.getYamlAPI() {
             val request = receiveOnlyForm<Request.GetYaml>()
             val yamlText = File(request.yamlRef.getFileRefByName().path).readText()
             val yamlSerializer = request.yamlRef.serializer
-            val yamlParsed = Yaml.default.parse(yamlSerializer, yamlText)
+            val yamlParsed = Json.decodeFromString(yamlSerializer as KSerializer<Any>, yamlText)
             val answer = Answer(OK, yamlParsed)
-            answer(answer, yamlSerializer as KSerializer<Any>)
+            answer(answer, yamlSerializer)
         } catch (e: IllegalArgumentException) {
-            answer(Answer(AnswerType.WRONG, "Wrong yaml name"), String.serializer())
+            e.printStackTrace()
+            answer(Answer(WRONG, "Wrong yaml name"), String.serializer())
         } catch (e: NoSuchElementException) {
-            answer(Answer(AnswerType.WRONG, "Yaml name is missing"), String.serializer())
+            e.printStackTrace()
+            answer(Answer(WRONG, "Yaml name is missing"), String.serializer())
         }
     }
 }
 
-fun sendToYandex(file: File, path: String) {
-    val response = ""
-    val urlRequest = "https://cloud-api.yandex.net:443/v1/disk/resources?path=%2F"
-    try {
-        val ur = URL(urlRequest)
-        val connection = ur.openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.setRequestProperty("Authorization", "OAuth AgAAAAANfC09AAZRi8cdtTnMLUI1vy32P3qsa7Q")
-        val buffer = BufferedInputStream(connection.inputStream)
-        connection.connect()
-    } catch (e: IOException) {
-        println(e.message)
+fun RestClient.dirExists(path: String): Boolean {
+    return try {
+        getResources(ResourcesArgs.Builder().setPath(path).build())
+        true
+    } catch (e: HttpCodeException) {
+        false
     }
-    println(response)
 }
 
+fun RestClient.createDirs(path: String): Unit {
+    if (dirExists(path)) return
+    val prefix = path.substringBeforeLast('/')
+    if (!dirExists(prefix)) {
+        createDirs(prefix)
+    }
+    makeFolder(path)
+}
+
+data class FilePath(val storage: String, val url: String)
+
+fun sendToYandex(file: File, path: String): FilePath {
+    val yandex = RestClient(Credentials("polystorage", YandexCredentials.token))
+    return try {
+        yandex.createDirs("pobeda/2021/$path".substringBeforeLast('/'))
+        val link = yandex.getUploadLink("pobeda/2021/$path", true).also(::println)
+        yandex.uploadFile(link, true, file, null)
+//        yandex.publish("pobeda/2021/$path")
+//        println("---> plink $publishLink")
+//        val pLinkTrue = yandex.getResources(ResourcesArgs.Builder().setPath("pobeda/2021/$path").build()).preview
+//        println("---> plin2 $pLinkTrue")
+        FilePath("yandex", "yandex?url=" + URLEncoder.encode("pobeda/2021/$path", "utf-8"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+        FilePath("server", path)
+    }
+}
+
+//const val yandexPath = "https://disk.yandex.ru/d/WjNE2BzrDFYlXQ/"
+//
+//fun fromYandexOrServerToPath(storagePath: String, subdir: String = "images"): String {
+//    return storagePath.substringAfter(yandexPath).let {
+//        if (it == storagePath) it else "uploads/$subdir/$it"
+//    }.also {
+//        println("->eee $it")
+//    }
+//}
+//
+//fun fromCommonToStoragePath(commonPath: String, subdir: String = "images"): String {
+//    return if (File(commonPath).exists()) commonPath else yandexPath + commonPath.substringAfter("uploads/$subdir/")
+//}
+//
+//fun fromCommonToStoragePath(storage: String, commonPath: String, subdir: String = "images"): String {
+//    return if (storage == "server") commonPath else yandexPath + commonPath.substringAfter("uploads/$subdir/")
+//}
+
+@Suppress("UNCHECKED_CAST", "FunctionName")
+fun <T : Any, P : Any> T.`unsafe private`(name: String): P {
+    val property = this::class.memberProperties.first {
+        it.name == name
+    }
+    property as KProperty1<T, P>
+    property.isAccessible = true
+    return property.get(this)
+}
+
+fun Route.yandexAllowAPI(client: HttpClient, width: Int = 800, height: Int = 640) {
+    get("yandex") {
+        val path = call.request.queryParameters["url"]!!
+        val file = File(path.substringAfter("pobeda/2021/")).also { println("loaded file: $it") }
+        if (file.exists()) {
+            println("exist!1")
+            call.respondFile(file)
+            return@get
+        }
+        println("file deleted: $file")
+        val yandex = RestClient(Credentials("polystorage", YandexCredentials.token))
+//        val resource = yandex.getResources(ResourcesArgs.Builder().setPath(path).build())
+//        val url = resource.preview
+//        yandex.downloadFile(call.request.queryParameters["url"]!!, null)
+        val cloudApi: CloudApi = yandex.`unsafe private`("cloudApi")
+        val url = cloudApi.getDownloadLink(path).href
+//        val sizeStr = "&size=${width}x$height"
+//        val previewUrl = url.replace("/disk/", "/preview/") + sizeStr
+
+//        call.respondRedirect(previewUrl, false)
+        val request = client.get<HttpResponse>(url) {
+            headers {
+                append(HttpHeaders.Authorization, "OAuth ${YandexCredentials.token}")
+            }
+        }
+
+        call.respondBytesWriter {
+            request.content.copyTo(this)
+        }
+//        println("--> ${request.request}\n\n ${request.request.headers}")
+//        val bytes = request.content.toByteArray()
+//        call.respondBytes(bytes)
+    }
+}
+
+
+@OptIn(ExperimentalStdlibApi::class)
 fun Route.loadParticipantFileAPI() {
     post(Method.FileUpload.methodName) {
         val allParts = call.receiveMultipart().readAllParts()
@@ -106,14 +212,18 @@ fun Route.loadParticipantFileAPI() {
                 val ext = File(fileData.originalFileName).extension
                 val newPath = dir / subDir / fileData.namePrefix usc randomString(7) dot ext
                 File(dir / files[0]).renameTo(File(newPath))
-                sendToYandex(File(newPath), newPath)
-                if (fileData.fileType == "file") addImageVersions(newPath)
+//                println("before: ${coroutineContext[CoroutineDispatcher]?.`unsafe private`<CoroutineDispatcher, Any>("delegate")}")
+                GlobalScope.launch {
+//                    println("inlaunch: ${coroutineContext[CoroutineDispatcher]?.`unsafe private`<CoroutineDispatcher, Any>("delegate")}")
+                    if (fileData.fileType == "file") addImageVersions(newPath)
+                }
+//                println("haha after: ${coroutineContext[CoroutineDispatcher]?.`unsafe private`<CoroutineDispatcher, Any>("delegate")}")
                 answer(Answer(OK, newPath), String.serializer())
             } catch (e: NoSuchElementException) {
-                answer(Answer(AnswerType.WRONG, "Necessary file info is missing"), String.serializer())
+                answer(Answer(WRONG, "Necessary file info is missing"), String.serializer())
             }
         } else {
-            answer(Answer(AnswerType.WRONG, "File is missing"), String.serializer())
+            answer(Answer(WRONG, "File is missing"), String.serializer())
         }
     }
 }
@@ -125,18 +235,15 @@ fun Route.loadAdminParticipantFileAPI() {
         val from = request.from
         if (password == "there is no spoon") {
             println("correct admin pw")
-            Database.connect("jdbc:postgresql://127.0.0.1/pobeda", driver = "org.postgresql.Driver", user = "postgres", password = dbPassword)
-            val t = transaction {
-                addLogger(StdOutSqlLogger)
-                SchemaUtils.create(participantTable)
-
+            val t = database {
                 val ivs = ImageVersions.selectAll().map {
                     IV(
                         it[ImageVersions.originalSrc],
                         it[ImageVersions.src],
                         it[ImageVersions.width],
                         it[ImageVersions.height],
-                        it[ImageVersions.isOriginal]
+                        it[ImageVersions.isOriginal],
+                        it[ImageVersions.url]
                     )
                 }.groupBy {
                     it.originalSrc
@@ -145,36 +252,39 @@ fun Route.loadAdminParticipantFileAPI() {
                 val width = 200
                 val height = 200
 
-                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC).limit(50, from).map {
-                    participantTable.run {
-                        it.toMap().filter { (key, value) ->
-                            (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
-                        }.map { (key, value) ->
-                            listOf(key, value.toString())
-                        }.toMutableList() + listOf(run {
-                            var resultSize = PlanarSize(-1, -1)
-                            var resultSrc = ""
-                            val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
-                            for (version in ivs.getValue(p)) {
-                                val src = version.src
-                                val w = version.width
-                                val h = version.height
-                                if (resultSize.width < width && resultSize.height < height &&
-                                    w > resultSize.width && h > resultSize.height) {
-                                    resultSize = PlanarSize(w, h)
-                                    resultSrc = src
-                                } else if (resultSize.width >= w && resultSize.height >= h &&
-                                    w >= width && h >= height) {
-                                    resultSize = PlanarSize(w, h)
-                                    resultSrc = src
+                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC)
+                    .limit(50, from).map {
+                        participantTable.run {
+                            it.toMap().filter { (key, value) ->
+                                (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
+                            }.map { (key, value) ->
+                                listOf(key, value.toString())
+                            }.toMutableList() + listOf(run {
+                                var resultSize = PlanarSize(-1, -1)
+                                var resultSrc = ""
+                                val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
+                                for (version in ivs.getValue(p)) {
+                                    val src = version.src
+                                    val w = version.width
+                                    val h = version.height
+                                    if (resultSize.width < width && resultSize.height < height &&
+                                        w > resultSize.width && h > resultSize.height
+                                    ) {
+                                        resultSize = PlanarSize(w, h)
+                                        resultSrc = src
+                                    } else if (resultSize.width >= w && resultSize.height >= h &&
+                                        w >= width && h >= height
+                                    ) {
+                                        resultSize = PlanarSize(w, h)
+                                        resultSrc = src
+                                    }
                                 }
-                            }
-                            listOf("mini", resultSrc)
-                        })
+                                listOf("mini", resultSrc)
+                            })
+                        }
                     }
-                }
             }
-            answer(Answer(OK, t), String.serializer().list.list.list)
+            answer(Answer(OK, t), ListSerializer(ListSerializer(ListSerializer(String.serializer()))))
         }
     }
 }
@@ -185,21 +295,21 @@ fun Route.loadFormAPI() {
         val request = receiveOnlyForm<Request.FormSend>()
         val participant = request.participant
 
-        if (File(participant.fileName).exists()) {
-            val okList = addParticipant(participant)
-            answer(Answer(OK, okList[0]), String.serializer())
-            if (okList[0] == "ok") {
-                participant.run {
-                    val sFIO = if (supervisor) supervisorFIO else null
-                    var number = "20"
-                    repeat(5 - okList[1].length) { number += "0" }
-                    number += okList[1]
-                    sendCertificate(email, "$surname $name", time, number, sFIO)
-                }
+//        if (!ImageVersions.select { ImageVersions.src eq participant.fileName }.empty()) {
+        val okList = addParticipant(participant)
+        answer(Answer(OK, okList[0]), String.serializer())
+        if (okList[0] == "ok") {
+            participant.run {
+                val sFIO = if (supervisor) supervisorFIO else null
+                var number = "20"
+                repeat(5 - okList[1].length) { number += "0" }
+                number += okList[1]
+                sendCertificate(email, "$surname $name", time, number, sFIO)
             }
-        } else {
-            answer(Answer(WRONG, "image file not uploaded"), String.serializer())
         }
+//        } else {
+//            answer(Answer(WRONG, "image file not uploaded"), String.serializer())
+//        }
 
 //        InputField.allFields.forEach { field ->
 //            field.value.value = post[field.key] ?: ""
@@ -218,10 +328,22 @@ fun Route.getImagesAPI() {
     post(Method.GetImages.methodName) {
         try {
             val request = receiveOnlyForm<Request.ImagesGetAll>()
-            answer(Answer(OK, getAllImages(request.width, request.height)), String.serializer().list)
+            val amount = database {
+                participantTable.selectAll().count()
+            }
+            answer(
+                Answer(
+                    OK,
+                    Request.AllImages(getAllImages(request.width, request.height, request.page, request.size), amount)
+                ),
+                Request.AllImages.serializer()
+            )
         } catch (e: NoSuchElementException) {
             e.printStackTrace()
-            answer(Answer(AnswerType.WRONG, "You can request all images only put defined width and height"), String.serializer())
+            answer(
+                Answer(WRONG, "You can request all images only put defined width and height"),
+                String.serializer()
+            )
         }
     }
 }
@@ -230,10 +352,16 @@ fun Route.getImageInfoAPI() {
     post(Method.GetImageInfo.methodName) {
         val request = receiveOnlyForm<Request.ImagesGetInfo>()
         try {
-            answer(Answer(OK, getOpenParticipantInfo(request.src, request.width, request.height,
-                request.all)), String.serializer().list)
+            answer(
+                Answer(
+                    OK, getOpenParticipantInfo(
+                        request.src, request.width, request.height,
+                        request.all
+                    )
+                ), ListSerializer(String.serializer())
+            )
         } catch (e: NoSuchElementException) {
-            answer(Answer(AnswerType.WRONG, ":("), String.serializer())
+            answer(Answer(WRONG, ":("), String.serializer())
         }
     }
 }

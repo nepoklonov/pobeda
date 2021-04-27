@@ -1,7 +1,7 @@
 package pobeda.client.pages
 
 import kotlinx.css.*
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.ListSerializer
 import pobeda.client.gray70Color
 import pobeda.client.send
 import pobeda.client.stucture.StandardPageComponent
@@ -18,7 +18,7 @@ import styled.*
 class ContactsComponent : StandardPageComponent<YamlListState<Contact>>() {
     init {
         initYamlListState()
-        Request.GetYaml(YamlRef.ContactsYaml).send(Contact.serializer().list, ::updateYamlListState)
+        Request.GetYaml(YamlRef.ContactsYaml).send(ListSerializer(Contact.serializer()), ::updateYamlListState)
     }
 
     override fun StyledDOMBuilder<*>.page() {

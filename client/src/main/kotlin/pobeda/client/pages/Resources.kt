@@ -1,7 +1,7 @@
 package pobeda.client.pages
 
 import kotlinx.css.*
-import kotlinx.serialization.list
+import kotlinx.serialization.builtins.ListSerializer
 import pobeda.client.gray50Color
 import pobeda.client.send
 import pobeda.client.stucture.StandardPageComponent
@@ -19,7 +19,7 @@ import styled.*
 class ResourcesComponent : StandardPageComponent<YamlListState<Resource>>() {
     init {
         initYamlListState()
-        Request.GetYaml(YamlRef.ResourcesYaml).send(Resource.serializer().list, ::updateYamlListState)
+        Request.GetYaml(YamlRef.ResourcesYaml).send(ListSerializer(Resource.serializer()), ::updateYamlListState)
     }
 
     override fun StyledDOMBuilder<*>.page() {
