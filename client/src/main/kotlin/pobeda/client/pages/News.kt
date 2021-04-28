@@ -21,6 +21,11 @@ class NewsComponent : StandardPageComponent<PageState>() {
             }
             styledH3 {
                 orangeSpan {
+                    +"Приём работ продлён до 7-го мая!"
+                }
+            }
+            styledH3 {
+                orangeSpan {
                     +"Рисуем и помним нашу Победу!"
                 }
             }

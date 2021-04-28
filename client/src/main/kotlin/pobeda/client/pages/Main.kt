@@ -33,7 +33,12 @@ class MainComponent : StandardPageComponent<PageState>() {
             }
             styledH3 {
                 orangeSpan {
-                    +"Рисуем и помним нашу Победу до 7-го мая!"
+                    +"Приём работ продлён до 7-го мая!"
+                }
+            }
+            styledH3 {
+                orangeSpan {
+                    +"Рисуем и помним нашу Победу!"
                 }
             }
             styledImg(src = "/images/design/post4.jpg") {
