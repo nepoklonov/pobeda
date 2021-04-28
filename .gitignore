@@ -6,3 +6,5 @@ build/
 
 /server/uploads
 /server/data
+
+/server/local.properties
