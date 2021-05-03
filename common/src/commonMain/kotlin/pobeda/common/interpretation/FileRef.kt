@@ -14,7 +14,7 @@ class DirRef private constructor(private val parent: DirRef? = null, val name: S
 
     companion object {
         val root = DirRef(null, "")
-        val yaml = root / "yaml"
+        val yaml = root / "json"
         val images = root / "images"
     }
 
@@ -22,7 +22,7 @@ class DirRef private constructor(private val parent: DirRef? = null, val name: S
     infix fun file(other: String) = FileRef(this, other)
 }
 
-fun YamlRef.getFileRefByName() = yaml file yamlName dot "yaml"
+fun YamlRef.getFileRefByName() = yaml file yamlName dot "json"
 
 fun getYamlRefByName(name: String): YamlRef {
     YamlRef.values().forEach {
