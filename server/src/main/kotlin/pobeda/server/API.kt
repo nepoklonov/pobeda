@@ -243,11 +243,19 @@ fun Route.loadAdminParticipantFileAPI() {
                     .limit(size, from).alias("sub")
 
                 subQuery.innerJoin(
-                        ImageVersions,
-                        { subQuery[participantTable.getColumn("fileName") as Column<String>] },
-                        { originalSrc })
+                    ImageVersions,
+                    { subQuery[participantTable.getColumn("fileName") as Column<String>] },
+                    { originalSrc })
                     .slice(
                         subQuery[participantTable.getColumn("id")],
+                        subQuery[participantTable.getColumn("city")],
+                        subQuery[participantTable.getColumn("age")],
+                        subQuery[participantTable.getColumn("essayFileName")],
+                        subQuery[participantTable.getColumn("essayText")],
+                        subQuery[participantTable.getColumn("essayTitle")],
+                        subQuery[participantTable.getColumn("name")],
+                        subQuery[participantTable.getColumn("surname")],
+                        subQuery[participantTable.getColumn("title")],
                         ImageVersions.url,
                         ImageVersions.width,
                         ImageVersions.height,
@@ -255,17 +263,28 @@ fun Route.loadAdminParticipantFileAPI() {
                     .orderBy(subQuery[participantTable.getColumn("id")], SortOrder.ASC)
                     .groupBy(
                         keySelector = {
-                            it[subQuery[participantTable.getColumn("id") as Column<Int>]]
+                            it[subQuery[participantTable.getColumn("id") as Column<Int>]] to
+                                    ParticipantShortInfo(
+                                        it[subQuery[participantTable.getColumn("age") as Column<Int>]],
+                                        it[subQuery[participantTable.getColumn("city") as Column<String>]],
+                                        it[subQuery[participantTable.getColumn("name") as Column<String>]] +
+                                                " " + it[subQuery[participantTable.getColumn("surname") as Column<String>]],
+                                        it[subQuery[participantTable.getColumn("title") as Column<String>]],
+                                        it[subQuery[participantTable.getColumn("essayFileName") as Column<String>]].takeIf { str -> str.isNotBlank() },
+                                        it[subQuery[participantTable.getColumn("essayText") as Column<String>]],
+                                        it[subQuery[participantTable.getColumn("essayTitle") as Column<String>]],
+                                    )
                         },
                         valueTransform = {
                             it[ImageVersions.width] x it[ImageVersions.height] to it[ImageVersions.url]
                         }
-                    ).map { (id, info) ->
-                        val bestImage = chooseBestImageVersionSize(id, info, width, height)
+                    ).map { (info, versionsInfo) ->
+                        val bestImage = chooseBestImageVersionSize(info.first, versionsInfo, width, height)
                         ParticipantAdminDTO(
-                            id,
+                            info.first,
+                            info.second,
                             bestImage,
-                            info.firstOrNull { !it.second.contains("/copies/") }?.second ?: bestImage
+                            versionsInfo.firstOrNull { !it.second.contains("/copies/") }?.second ?: bestImage
                         )
                     }
             }

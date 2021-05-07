@@ -46,8 +46,20 @@ enum class AnswerType {
 }
 
 @Serializable
+data class ParticipantShortInfo(
+    val age: Int,
+    val city: String,
+    val fio: String,
+    val workName: String,
+    val essayFilePath: String?,
+    val essayText: String,
+    val essayTitle: String,
+)
+
+@Serializable
 data class ParticipantAdminDTO(
     val id: Int,
+    val info: ParticipantShortInfo,
     val imageSrc: String,
     val original: String
 )

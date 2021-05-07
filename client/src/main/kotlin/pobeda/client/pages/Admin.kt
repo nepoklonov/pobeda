@@ -5,6 +5,7 @@ import kotlinx.css.*
 import kotlinx.css.properties.border
 import kotlinx.css.properties.borderRight
 import kotlinx.html.ATarget
+import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onInputFunction
 import kotlinx.serialization.builtins.ListSerializer
@@ -24,6 +25,7 @@ import react.RComponent
 import react.dom.a
 import react.dom.br
 import react.dom.h2
+import react.dom.p
 import react.setState
 import styled.*
 
@@ -197,20 +199,46 @@ class AdminComponent : RComponent<PageProps, AdminState>() {
                                 backgroundSize = "cover"
                                 width = 200.px
                                 height = 150.px
-                                color = Color.transparent
+                                "div.description" {
+                                    display = Display.none
+                                }
                                 hover {
-                                    color = Color.black
+                                    "a" {
+                                        backgroundColor = Color.white
+                                    }
+                                    "div.description" {
+                                        display = Display.block
+                                    }
                                     declarations["textShadow"] = "0px 0px 3px #fff"
                                 }
                             }
                             styledA(participant.original, target = ATarget.blank) {
                                 +"${index + state.from.toInt() + 1} "
                             }
-                            br { }
-                            styledSpan {
-                                +"id=w"
-                                +participant.id.toString()
+                            styledDiv {
+                                css {
+                                    width = 200.pct
+                                    position = Position.absolute
+                                    backgroundColor = Color.white
+                                }
+                                attrs.classes += "description"
+                                p { +"id=w${participant.id}" }
+                                p { +"фио: ${participant.info.fio}" }
+                                p { +"возраст: ${participant.info.age}" }
+                                p { +"название работы: ${participant.info.workName}" }
+                                p { +"город: ${participant.info.city}" }
+                                p { +"название эссе: ${participant.info.essayTitle}" }
+                                p { +"текст эссе: ${participant.info.essayText}" }
+                                p {
+                                    +"файл эссе: "
+                                    participant.info.essayFilePath?.let { href ->
+                                        a(href = "/$href") {
+                                            +"ссылка"
+                                        }
+                                    }
+                                }
                             }
+
 //                    participant.map { it[0] to it[1] }.toMap().let {
 //                        line("id", it["id"])
 //                        line("время загрузки", it["time"])
