@@ -146,7 +146,7 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                 }
 
                 styledSpan {
-                    +"${state.from} -- ${state.from.toInt() + 49}"
+                    +"${state.from.toInt() + 1} -- ${state.from.toInt() + 50}"
                 }
 
                 styledDiv {
@@ -164,7 +164,7 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                     justifyContent = JustifyContent.spaceBetween
                 }
 
-                state.participants.forEachIndexed { _, participant ->
+                state.participants.forEachIndexed { index, participant ->
                     styledDiv {
                         css {
                             marginBottom = 5.px
@@ -182,6 +182,11 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                             }
                         }
                         styledA(participant.imageSrc, target = ATarget.blank) {
+                            +"${index + state.from.toInt() + 1} "
+                        }
+                        br { }
+                        styledSpan {
+                            +"id=w"
                             +participant.id.toString()
                         }
 //                    participant.map { it[0] to it[1] }.toMap().let {

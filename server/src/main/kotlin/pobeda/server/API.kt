@@ -247,10 +247,9 @@ fun Route.loadAdminParticipantFileAPI() {
                         ImageVersions.url,
                         ImageVersions.width,
                         ImageVersions.height,
-                    ).select { (ImageVersions.src eq participantTable.getColumn("fileName")) and
-                            (participantTable.getColumn("id") as Column<Int> greaterEq from) }
+                    ).select { ImageVersions.src eq participantTable.getColumn("fileName") }
                     .orderBy(participantTable.getColumn("id"), SortOrder.ASC)
-                    .limit(size)
+                    .limit(size, from)
                     .groupBy(
                         keySelector = {
                             it[participantTable.getColumn("id") as Column<Int>]
