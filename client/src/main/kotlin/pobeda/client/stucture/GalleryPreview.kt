@@ -106,7 +106,7 @@ class GalleryPreviewComponent : RComponent<RProps, GalleryPreviewState>() {
                 val j = i % state.yaml.size
                 styledDiv {
                     css {
-                        opacity = 0.8
+                        opacity = 1 //0.8
                         backgroundImage = Image("url('${state.yaml[j]}')")
                         backgroundRepeat = BackgroundRepeat.noRepeat
                         backgroundSize = "cover"

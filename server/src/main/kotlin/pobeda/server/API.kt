@@ -29,15 +29,13 @@ import kotlinx.serialization.*
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import pobeda.common.*
 import pobeda.common.AnswerType.OK
 import pobeda.common.AnswerType.WRONG
 import pobeda.common.interpretation.PlanarSize
 import pobeda.common.interpretation.getFileRefByName
+import pobeda.common.interpretation.x
 import java.io.File
 import java.net.URLEncoder
 import kotlin.reflect.KProperty1
@@ -187,7 +185,7 @@ fun Route.yandexAllowAPI(client: HttpClient, width: Int = 800, height: Int = 640
             }
         }
 
-        call.respondBytesWriter {
+        call.respondBytesWriter(contentType = ContentType.defaultForFilePath(path)) {
             request.content.copyTo(this)
         }
 //        println("--> ${request.request}\n\n ${request.request.headers}")
@@ -228,63 +226,46 @@ fun Route.loadParticipantFileAPI() {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
 fun Route.loadAdminParticipantFileAPI() {
     post(Method.ParticipantsGetAll.methodName) {
         val request = call.receiveMultipart().readAllParts().receiveForm<Request.ParticipantsGetAll>()
         val password = request.password
         val from = request.from
-        if (password == "there is no spoon") {
+        val size = 50
+        val width = 200
+        val height = 200
+        if (password == AdminCredentials.secret) {
             println("correct admin pw")
             val t = database {
-                val ivs = ImageVersions.selectAll().map {
-                    IV(
-                        it[ImageVersions.originalSrc],
-                        it[ImageVersions.src],
-                        it[ImageVersions.width],
-                        it[ImageVersions.height],
-                        it[ImageVersions.isOriginal],
-                        it[ImageVersions.url]
-                    )
-                }.groupBy {
-                    it.originalSrc
-                }
-
-                val width = 200
-                val height = 200
-
-                participantTable.selectAll().orderBy(participantTable.columns.first { it.name == "id" }, SortOrder.ASC)
-                    .limit(50, from).map {
-                        participantTable.run {
-                            it.toMap().filter { (key, value) ->
-                                (key !in listOf("essayOldFileName", "oldFileName")) and (value.toString() != "")
-                            }.map { (key, value) ->
-                                listOf(key, value.toString())
-                            }.toMutableList() + listOf(run {
-                                var resultSize = PlanarSize(-1, -1)
-                                var resultSrc = ""
-                                val p = it[participantTable.columns.first { it.name == "fileName" } as Column<String>]
-                                for (version in ivs.getValue(p)) {
-                                    val src = version.src
-                                    val w = version.width
-                                    val h = version.height
-                                    if (resultSize.width < width && resultSize.height < height &&
-                                        w > resultSize.width && h > resultSize.height
-                                    ) {
-                                        resultSize = PlanarSize(w, h)
-                                        resultSrc = src
-                                    } else if (resultSize.width >= w && resultSize.height >= h &&
-                                        w >= width && h >= height
-                                    ) {
-                                        resultSize = PlanarSize(w, h)
-                                        resultSrc = src
-                                    }
-                                }
-                                listOf("mini", resultSrc)
-                            })
+                participantTable.innerJoin(
+                    ImageVersions,
+                    { participantTable.getColumn("fileName") as Column<String> },
+                    { src })
+                    .slice(
+                        participantTable.getColumn("id"),
+                        ImageVersions.url,
+                        ImageVersions.width,
+                        ImageVersions.height,
+                    ).select { (ImageVersions.src eq participantTable.getColumn("fileName")) and
+                            (participantTable.getColumn("id") as Column<Int> greaterEq from) }
+                    .orderBy(participantTable.getColumn("id"), SortOrder.ASC)
+                    .limit(size)
+                    .groupBy(
+                        keySelector = {
+                            it[participantTable.getColumn("id") as Column<Int>]
+                        },
+                        valueTransform = {
+                            it[ImageVersions.width] x it[ImageVersions.height] to it[ImageVersions.url]
                         }
+                    ).map { (id, info) ->
+                        ParticipantAdminDTO(
+                            id,
+                            chooseBestImageVersionSize(id, info, width, height)
+                        )
                     }
             }
-            answer(Answer(OK, t), ListSerializer(ListSerializer(ListSerializer(String.serializer()))))
+            answer(Answer(OK, t), ListSerializer(ParticipantAdminDTO.serializer()))
         }
     }
 }

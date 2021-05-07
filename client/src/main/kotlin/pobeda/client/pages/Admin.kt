@@ -3,6 +3,7 @@ package pobeda.client.pages
 import kotlinx.css.*
 import kotlinx.css.properties.border
 import kotlinx.css.properties.borderRight
+import kotlinx.html.ATarget
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onInputFunction
 import kotlinx.serialization.builtins.ListSerializer
@@ -12,6 +13,7 @@ import pobeda.client.gray70Color
 import pobeda.client.send
 import pobeda.client.stucture.PageState
 import pobeda.client.stucture.StandardPageComponent
+import pobeda.common.ParticipantAdminDTO
 import pobeda.common.Request
 import pobeda.common.getPluralForm
 import react.RBuilder
@@ -24,7 +26,7 @@ interface AdminState : PageState {
     var sent: Boolean
     var from: String
     var password: String
-    var participants: List<List<List<String>>>
+    var participants: List<ParticipantAdminDTO>
 }
 
 class AdminComponent : StandardPageComponent<AdminState>() {
@@ -81,9 +83,10 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                 setState {
                     sent = true
                 }
-                Request.ParticipantsGetAll(state.password, state.from.toInt()).send(ListSerializer(ListSerializer(ListSerializer(String.serializer())))) {
-                    setState { participants = it }
-                }
+                Request.ParticipantsGetAll(state.password, state.from.toInt())
+                    .send(ListSerializer(ParticipantAdminDTO.serializer())) {
+                        setState { participants = it }
+                    }
             }
         }
         if (state.sent) {
@@ -128,9 +131,10 @@ class AdminComponent : StandardPageComponent<AdminState>() {
                                 val newFrom = (state.from.toInt() + number)
                                 setState { from = newFrom.toString() }
                                 setState { participants = listOf() }
-                                Request.ParticipantsGetAll(state.password, newFrom).send(ListSerializer(ListSerializer(ListSerializer(String.serializer())))) {
-                                    setState { participants = it }
-                                }
+                                Request.ParticipantsGetAll(state.password, newFrom)
+                                    .send(ListSerializer(ParticipantAdminDTO.serializer())) {
+                                        setState { participants = it }
+                                    }
                             }
                         }
                     }
@@ -152,119 +156,142 @@ class AdminComponent : StandardPageComponent<AdminState>() {
 
             goNext()
 
-            state.participants.forEachIndexed { index, participant ->
-                styledDiv {
-                    css {
-                        border(1.px, BorderStyle.solid, gray70Color)
-                    }
-                    participant.map { it[0] to it[1] }.toMap().let {
-                        line("id", it["id"])
-                        line("время загрузки", it["time"])
-                        line("автор работы", it["surname"] + " ",
-                            it["name"] + ", ",
-                            it["age"] + " " + (it["age"]?.toIntOrNull()?.getPluralForm("год", "года", "лет"))
-                                ?: "-")
-                        line("название", it["title"])
-                        it["fileName"]?.let { file -> "https://risuem-pobedu.ru/$file" }.let { file ->
-                            styledA(target = "_blank", href = file) {
-                                styledImg(src = it["mini"]?.let { ff -> "https://risuem-pobedu.ru/$ff" }) {
-                                    css {
-                                        height = 70.px
-                                    }
-                                }
-                            }
-                            br { }
-                        }
-                        it["fileName"]?.replace("uploads/(images|essays)/".toRegex(), "images/certs/cert-")
-                            ?.replace("_[^-]*[.]".toRegex(), ".")?.replace("\\.\\w+$".toRegex(), ".jpg")?.let { cert ->
-                                styledA(href = cert, target = "_blank") {
-                                    css {
-                                        color = Color.blueViolet
-                                    }
-                                    +"сертификат"
-                                }
-                            }
-                        br {}
-                        line("город", it["city"])
-                        line("школа", it["school"])
-                        line("email", it["email"])
+            styledDiv {
 
-                        val sup = listOf("supervisorFIO", "supervisorContacts")
+                css {
+                    display = Display.flex
+                    flexWrap = FlexWrap.wrap
+                    justifyContent = JustifyContent.spaceBetween
+                }
 
-                        if ((it["supervisor"] == "true") or sup.any { s -> it.containsKey(s) }) {
-                            styledSpan {
-                                css {
-                                    fontWeight = FontWeight.bold
-                                }
-                                +"куратор: "
-                            }
-                            sup.filter { s -> it.containsKey(s) }.forEach { i ->
-                                styledP {
-                                    css {
-                                        paddingLeft = 10.px
-                                    }
-                                    +(when (i) {
-                                        "supervisorContacts" -> "контакты: "
-                                        "supervisorFIO" -> "фио: "
-                                        else -> " "
-                                    } + it[i])
-                                }
+                state.participants.forEachIndexed { _, participant ->
+                    styledDiv {
+                        css {
+                            marginBottom = 5.px
+                            border(1.px, BorderStyle.solid, gray70Color)
+                            backgroundImage = Image("url('${participant.imageSrc}')")
+                            backgroundRepeat = BackgroundRepeat.noRepeat
+                            backgroundPosition = "center"
+                            backgroundSize = "cover"
+                            width = 130.px
+                            height = 100.px
+                            color = Color.transparent
+                            hover {
+                                color = Color.black
+                                declarations["textShadow"] = "0px 0px 3px #fff"
                             }
                         }
-
-                        val es = listOf("essayTitle", "essayText", "essayFileName")
-
-                        if ((it["essay"] == "true") or es.any { s -> it.containsKey(s) }) {
-                            styledSpan {
-                                css {
-                                    fontWeight = FontWeight.bold
-                                }
-                                +"эссе: "
-                            }
-                            es.filter { s -> it.containsKey(s) }.forEach { i ->
-                                styledP {
-                                    css {
-                                        paddingLeft = 10.px
-                                    }
-                                    when (i) {
-                                        "essayTitle" -> {
-                                            +"название эссе: "
-                                            br {}
-                                            styledP {
-                                                css {
-                                                    paddingLeft = 10.px
-                                                }
-                                                +(it[i] + "")
-                                            }
-                                        }
-                                        "essayText" -> {
-                                            +"текст эссе: "
-                                            br {}
-                                            styledP {
-                                                css {
-                                                    paddingLeft = 10.px
-                                                }
-                                                +(it[i] + "")
-                                            }
-                                        }
-                                        "essayFileName" -> {
-                                            it[i]?.let { f ->
-                                                a(href = f, target = "_blank") {
-                                                    +"файл эссе"
-                                                }
-                                            }
-                                        }
-                                        else -> {
-                                            +""
-                                        }
-                                    }
-                                }
-                            }
+                        styledA(participant.imageSrc, target = ATarget.blank) {
+                            +participant.id.toString()
                         }
+//                    participant.map { it[0] to it[1] }.toMap().let {
+//                        line("id", it["id"])
+//                        line("время загрузки", it["time"])
+//                        line("автор работы", it["surname"] + " ",
+//                            it["name"] + ", ",
+//                            it["age"] + " " + (it["age"]?.toIntOrNull()?.getPluralForm("год", "года", "лет"))
+//                                ?: "-")
+//                        line("название", it["title"])
+//                        it["fileName"]?.let { file -> "https://risuem-pobedu.ru/$file" }.let { file ->
+//                            styledA(target = "_blank", href = file) {
+//                                styledImg(src = it["mini"]?.let { ff -> "https://risuem-pobedu.ru/$ff" }) {
+//                                    css {
+//                                        height = 70.px
+//                                    }
+//                                }
+//                            }
+//                            br { }
+//                        }
+//                        it["fileName"]?.replace("uploads/(images|essays)/".toRegex(), "images/certs/cert-")
+//                            ?.replace("_[^-]*[.]".toRegex(), ".")?.replace("\\.\\w+$".toRegex(), ".jpg")?.let { cert ->
+//                                styledA(href = cert, target = "_blank") {
+//                                    css {
+//                                        color = Color.blueViolet
+//                                    }
+//                                    +"сертификат"
+//                                }
+//                            }
+//                        br {}
+//                        line("город", it["city"])
+//                        line("школа", it["school"])
+//                        line("email", it["email"])
+//
+//                        val sup = listOf("supervisorFIO", "supervisorContacts")
+//
+//                        if ((it["supervisor"] == "true") or sup.any { s -> it.containsKey(s) }) {
+//                            styledSpan {
+//                                css {
+//                                    fontWeight = FontWeight.bold
+//                                }
+//                                +"куратор: "
+//                            }
+//                            sup.filter { s -> it.containsKey(s) }.forEach { i ->
+//                                styledP {
+//                                    css {
+//                                        paddingLeft = 10.px
+//                                    }
+//                                    +(when (i) {
+//                                        "supervisorContacts" -> "контакты: "
+//                                        "supervisorFIO" -> "фио: "
+//                                        else -> " "
+//                                    } + it[i])
+//                                }
+//                            }
+//                        }
+//
+//                        val es = listOf("essayTitle", "essayText", "essayFileName")
+//
+//                        if ((it["essay"] == "true") or es.any { s -> it.containsKey(s) }) {
+//                            styledSpan {
+//                                css {
+//                                    fontWeight = FontWeight.bold
+//                                }
+//                                +"эссе: "
+//                            }
+//                            es.filter { s -> it.containsKey(s) }.forEach { i ->
+//                                styledP {
+//                                    css {
+//                                        paddingLeft = 10.px
+//                                    }
+//                                    when (i) {
+//                                        "essayTitle" -> {
+//                                            +"название эссе: "
+//                                            br {}
+//                                            styledP {
+//                                                css {
+//                                                    paddingLeft = 10.px
+//                                                }
+//                                                +(it[i] + "")
+//                                            }
+//                                        }
+//                                        "essayText" -> {
+//                                            +"текст эссе: "
+//                                            br {}
+//                                            styledP {
+//                                                css {
+//                                                    paddingLeft = 10.px
+//                                                }
+//                                                +(it[i] + "")
+//                                            }
+//                                        }
+//                                        "essayFileName" -> {
+//                                            it[i]?.let { f ->
+//                                                a(href = f, target = "_blank") {
+//                                                    +"файл эссе"
+//                                                }
+//                                            }
+//                                        }
+//                                        else -> {
+//                                            +""
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
                     }
                 }
             }
-
             goNext()
         }
     }

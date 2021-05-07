@@ -46,4 +46,10 @@ enum class AnswerType {
 }
 
 @Serializable
+data class ParticipantAdminDTO(
+    val id: Int,
+    val imageSrc: String
+)
+
+@Serializable
 data class Answer<T>(val answerType: AnswerType, val body: T)

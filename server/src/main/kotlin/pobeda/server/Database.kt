@@ -131,32 +131,35 @@ object ImageVersions : IntIdTable() {
     val url = text("url")
 }
 
-object YandexCredentials {
-    val token: String
-
-    init {
-        val localPropertiesFile = PathResolver.getResource("local.properties")
-        val properties = Properties().apply {
-            load(localPropertiesFile.openStream())
-        }
-        token = properties["token"] as String
+fun readLocalProperties(): Properties {
+    val localPropertiesFile = PathResolver.getResource("local.properties")
+    return Properties().apply {
+        load(localPropertiesFile.openStream())
     }
 }
 
+object YandexCredentials {
+    private val properties = readLocalProperties()
+    val token = properties["yandex_token"] as String
+}
+
+object AdminCredentials {
+    private val properties = readLocalProperties()
+    val secret = properties["admin_secret"] as String
+}
+
+object EmailCredentials {
+    private val properties = readLocalProperties()
+    val email = properties["email"] as String
+    val password = properties["email_password"] as String
+}
 
 object DB {
-    const val url: String = "jdbc:postgresql://127.0.0.1/pobeda"
-    val user: String
-    val password: String
-
-    init {
-        val localPropertiesFile = PathResolver.getResource("local.properties")
-        val properties = Properties().apply {
-            load(localPropertiesFile.openStream())
-        }
-        user = properties["user"] as String
-        password = properties["password"] as String
-    }
+    private val properties = readLocalProperties()
+    private val ip = properties["db_url"] as String
+    val url: String = "jdbc:postgresql://$ip/pobeda"
+    val user: String = properties["db_user"] as String
+    val password: String = properties["db_password"] as String
 }
 
 inline fun <T> database(crossinline block: Transaction.() -> T): T {
@@ -282,7 +285,7 @@ fun addImageVersions(originalPath: String) {
                 val imageStorage = sendResultVersion.storage.also {
                     if (it == "yandex") {
                         newFile.delete()
-                        if(newFile.parentFile.listFiles()?.toList()?.isEmpty() == true) {
+                        if (newFile.parentFile.listFiles()?.toList()?.isEmpty() == true) {
                             newFile.parentFile.delete()
                         }
                     }
