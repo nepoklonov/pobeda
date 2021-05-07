@@ -21,6 +21,8 @@ import react.setState
 import styled.css
 import styled.styledSpan
 import kotlin.js.Date
+import kotlin.math.max
+import kotlin.math.min
 
 val months = arrayOf(
     "января",
@@ -45,8 +47,15 @@ fun today(): Today = Date().let {
 
 val DAY_OF_THE_END = Date.UTC(2021, 4, 7).toLong()
 const val msInDay = 1000 * 3600 * 24
+const val nakrutkaStartTime = 1620060000000
+const val msInSec = 1000
+const val maxNakrutka = 315000.toLong()
+
 
 fun getDaysLeft() = (-Date.now().toLong() / msInDay + DAY_OF_THE_END / msInDay).toInt()
+
+fun nakrutka(amount: String) = if (amount == "...") "..."  else ((amount.toIntOrNull() ?: 0) + (max(0, min(maxNakrutka, ((Date.now().toLong() - nakrutkaStartTime) / msInSec)))).toInt()).toString()
+
 
 interface HeaderState : YamlListState<String> {
     var amount: String
@@ -101,10 +110,10 @@ class HeaderComponent : RComponent<RoutedProps, HeaderState>() {
             }
         }
         state.amount.also {
-            labelInBox(it, 1626, 210, 1839, 280) {
+            labelInBox(nakrutka(it), 1626, 210, 1839, 280) {
                 +MainStyles.orangeText
             }
-            labelInBox((it.toIntOrNull() ?: 5).getPluralForm("участник", "участника", "участников"), 1901, 210, 2155, 280)
+            labelInBox(((nakrutka(it)).toIntOrNull() ?: 5).getPluralForm("участник", "участника", "участников"), 1901, 210, 2155, 280)
         }
         routeLink(to = PageInfo.Main.url) {
             imageInBox(FileInfo.Image.mainLogo.src, 240, 402, 743, 905) {
