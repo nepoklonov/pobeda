@@ -1,5 +1,6 @@
 package pobeda.client.pages
 
+import kotlinx.browser.document
 import kotlinx.css.*
 import kotlinx.css.properties.border
 import kotlinx.css.properties.borderRight
@@ -8,17 +9,21 @@ import kotlinx.html.js.onClickFunction
 import kotlinx.html.js.onInputFunction
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
+import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import pobeda.client.gray70Color
 import pobeda.client.send
+import pobeda.client.stucture.PageProps
 import pobeda.client.stucture.PageState
 import pobeda.client.stucture.StandardPageComponent
 import pobeda.common.ParticipantAdminDTO
 import pobeda.common.Request
 import pobeda.common.getPluralForm
 import react.RBuilder
+import react.RComponent
 import react.dom.a
 import react.dom.br
+import react.dom.h2
 import react.setState
 import styled.*
 
@@ -29,7 +34,7 @@ interface AdminState : PageState {
     var participants: List<ParticipantAdminDTO>
 }
 
-class AdminComponent : StandardPageComponent<AdminState>() {
+class AdminComponent : RComponent<PageProps, AdminState>() {
     init {
         state.sent = false
         state.from = "0"
@@ -37,158 +42,175 @@ class AdminComponent : StandardPageComponent<AdminState>() {
         state.participants = listOf()
     }
 
-    override fun StyledDOMBuilder<*>.page() {
+    override fun componentDidMount() {
+        val jsR = document.getElementById("js-response") as HTMLElement
+        jsR.style.width = 90.pct.toString()
+    }
 
-        styledSpan {
-            +"Секретные слова: "
-        }
-        styledInput {
+    override fun RBuilder.render() {
+        styledDiv {
             css {
-                width = 200.px
-                height = 40.px
+                position = Position.absolute
+                top = 0.px
+                left = 0.px
+                height = 100.pct
+                width = 100.pct
+                backgroundColor = Color.white
+                zIndex = 2
             }
-            attrs.onInputFunction = {
-                val v = (it.target as HTMLInputElement).value
-                setState {
-                    password = v
+            h2 {
+                +"Админка"
+            }
+            styledSpan {
+                +"Секретные слова: "
+            }
+            styledInput {
+                css {
+                    width = 200.px
+                    height = 40.px
                 }
-            }
-        }
-        br {}
-
-        styledSpan {
-            +"необязательно | Начиная с: "
-        }
-        styledInput {
-            css {
-                width = 60.px
-                height = 40.px
-            }
-            attrs.onInputFunction = {
-                val v = (it.target as HTMLInputElement).value
-                setState {
-                    from = if (v == "") "0" else v
-                }
-            }
-        }
-
-        br {}
-        styledButton {
-            css {
-                width = 80.px
-                height = 40.px
-            }
-            +"Искать"
-            attrs.onClickFunction = {
-                setState {
-                    sent = true
-                }
-                Request.ParticipantsGetAll(state.password, state.from.toInt())
-                    .send(ListSerializer(ParticipantAdminDTO.serializer())) {
-                        setState { participants = it }
+                attrs.onInputFunction = {
+                    val v = (it.target as HTMLInputElement).value
+                    setState {
+                        password = v
                     }
-            }
-        }
-        if (state.sent) {
-            fun RBuilder.line(key: String, vararg values: String?) {
-                styledSpan {
-                    css {
-                        fontWeight = FontWeight.bold
-                    }
-                    +"$key: "
                 }
-                values.forEach { v ->
+            }
+            br {}
+
+            styledSpan {
+                +"необязательно | Начиная с: "
+            }
+            styledInput {
+                css {
+                    width = 60.px
+                    height = 40.px
+                }
+                attrs.onInputFunction = {
+                    val v = (it.target as HTMLInputElement).value
+                    setState {
+                        from = if (v == "") "0" else v
+                    }
+                }
+            }
+
+            br {}
+            styledButton {
+                css {
+                    width = 80.px
+                    height = 40.px
+                }
+                +"Искать"
+                attrs.onClickFunction = {
+                    setState {
+                        sent = true
+                    }
+                    Request.ParticipantsGetAll(state.password, state.from.toInt())
+                        .send(ListSerializer(ParticipantAdminDTO.serializer())) {
+                            setState { participants = it }
+                        }
+                }
+            }
+            if (state.sent) {
+                fun RBuilder.line(key: String, vararg values: String?) {
                     styledSpan {
                         css {
-                            color = when (key) {
-                                "id" -> Color.red
-                                else -> Color.black
+                            fontWeight = FontWeight.bold
+                        }
+                        +"$key: "
+                    }
+                    values.forEach { v ->
+                        styledSpan {
+                            css {
+                                color = when (key) {
+                                    "id" -> Color.red
+                                    else -> Color.black
+                                }
+                                when (key) {
+                                    "id", "автор работы", "название" -> {
+                                        backgroundColor = Color.white
+                                    }
+                                }
+                                borderRight(1.px, BorderStyle.solid, Color.pink)
                             }
-                            when (key) {
-                                "id", "автор работы", "название" -> {
-                                    backgroundColor = Color.white
+                            +(v ?: "")
+                        }
+                    }
+                    br { }
+                }
+
+                fun RBuilder.goNext() = styledDiv {
+                    css {
+                        display = Display.flex
+                        justifyContent = JustifyContent.spaceBetween
+                    }
+                    fun RBuilder.leftRight(vararg numbers: Int) = numbers.forEach { number ->
+                        styledDiv {
+                            a(href = "#") {
+                                +if (number < 0) "$number <-" else "-> +$number"
+                                attrs.onClickFunction = {
+                                    it.preventDefault()
+                                    val newFrom = (state.from.toInt() + number)
+                                    setState { from = newFrom.toString() }
+                                    setState { participants = listOf() }
+                                    Request.ParticipantsGetAll(state.password, newFrom)
+                                        .send(ListSerializer(ParticipantAdminDTO.serializer())) {
+                                            setState { participants = it }
+                                        }
                                 }
                             }
-                            borderRight(1.px, BorderStyle.solid, Color.pink)
                         }
-                        +(v ?: "")
                     }
-                }
-                br { }
-            }
 
-            fun RBuilder.goNext() = styledDiv {
-                css {
-                    display = Display.flex
-                    justifyContent = JustifyContent.spaceBetween
-                }
-                fun RBuilder.leftRight(vararg numbers: Int) = numbers.forEach { number ->
+
                     styledDiv {
-                        a(href = "#") {
-                            +if (number < 0) "$number <-" else "-> +$number"
-                            attrs.onClickFunction = {
-                                it.preventDefault()
-                                val newFrom = (state.from.toInt() + number)
-                                setState { from = newFrom.toString() }
-                                setState { participants = listOf() }
-                                Request.ParticipantsGetAll(state.password, newFrom)
-                                    .send(ListSerializer(ParticipantAdminDTO.serializer())) {
-                                        setState { participants = it }
-                                    }
-                            }
-                        }
+                        leftRight(-500, -2000, -5000, -30000)
+                    }
+
+                    styledSpan {
+                        +"${state.from.toInt() + 1} -- ${state.from.toInt() + 500}"
+                    }
+
+                    styledDiv {
+                        leftRight(500, 2000, 5000, 30000)
                     }
                 }
 
+                goNext()
 
                 styledDiv {
-                    leftRight(-50, -200, -1000)
-                }
 
-                styledSpan {
-                    +"${state.from.toInt() + 1} -- ${state.from.toInt() + 50}"
-                }
+                    css {
+                        display = Display.flex
+                        flexWrap = FlexWrap.wrap
+                        justifyContent = JustifyContent.spaceBetween
+                    }
 
-                styledDiv {
-                    leftRight(50, 200, 1000)
-                }
-            }
-
-            goNext()
-
-            styledDiv {
-
-                css {
-                    display = Display.flex
-                    flexWrap = FlexWrap.wrap
-                    justifyContent = JustifyContent.spaceBetween
-                }
-
-                state.participants.forEachIndexed { index, participant ->
-                    styledDiv {
-                        css {
-                            marginBottom = 5.px
-                            border(1.px, BorderStyle.solid, gray70Color)
-                            backgroundImage = Image("url('${participant.imageSrc}')")
-                            backgroundRepeat = BackgroundRepeat.noRepeat
-                            backgroundPosition = "center"
-                            backgroundSize = "cover"
-                            width = 130.px
-                            height = 100.px
-                            color = Color.transparent
-                            hover {
-                                color = Color.black
-                                declarations["textShadow"] = "0px 0px 3px #fff"
+                    state.participants.forEachIndexed { index, participant ->
+                        styledDiv {
+                            css {
+                                marginBottom = 5.px
+                                border(1.px, BorderStyle.solid, gray70Color)
+                                backgroundImage = Image("url('${participant.imageSrc}')")
+                                backgroundRepeat = BackgroundRepeat.noRepeat
+                                backgroundPosition = "center"
+                                backgroundSize = "cover"
+                                width = 200.px
+                                height = 150.px
+                                color = Color.transparent
+                                hover {
+                                    color = Color.black
+                                    declarations["textShadow"] = "0px 0px 3px #fff"
+                                }
                             }
-                        }
-                        styledA(participant.imageSrc, target = ATarget.blank) {
-                            +"${index + state.from.toInt() + 1} "
-                        }
-                        br { }
-                        styledSpan {
-                            +"id=w"
-                            +participant.id.toString()
-                        }
+                            styledA(participant.original, target = ATarget.blank) {
+                                +"${index + state.from.toInt() + 1} "
+                            }
+                            br { }
+                            styledSpan {
+                                +"id=w"
+                                +participant.id.toString()
+                            }
 //                    participant.map { it[0] to it[1] }.toMap().let {
 //                        line("id", it["id"])
 //                        line("время загрузки", it["time"])
@@ -294,10 +316,11 @@ class AdminComponent : StandardPageComponent<AdminState>() {
 //                            }
 //                        }
 //                    }
+                        }
                     }
                 }
+                goNext()
             }
-            goNext()
         }
     }
 }

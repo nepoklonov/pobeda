@@ -232,35 +232,40 @@ fun Route.loadAdminParticipantFileAPI() {
         val request = call.receiveMultipart().readAllParts().receiveForm<Request.ParticipantsGetAll>()
         val password = request.password
         val from = request.from
-        val size = 50
+        val size = 500
         val width = 200
         val height = 200
         if (password == AdminCredentials.secret) {
             println("correct admin pw")
             val t = database {
-                participantTable.innerJoin(
-                    ImageVersions,
-                    { participantTable.getColumn("fileName") as Column<String> },
-                    { src })
+                val subQuery = participantTable.selectAll()
+                    .orderBy(participantTable.getColumn("id"), SortOrder.ASC)
+                    .limit(size, from).alias("sub")
+
+                subQuery.innerJoin(
+                        ImageVersions,
+                        { subQuery[participantTable.getColumn("fileName") as Column<String>] },
+                        { originalSrc })
                     .slice(
-                        participantTable.getColumn("id"),
+                        subQuery[participantTable.getColumn("id")],
                         ImageVersions.url,
                         ImageVersions.width,
                         ImageVersions.height,
-                    ).select { ImageVersions.src eq participantTable.getColumn("fileName") }
-                    .orderBy(participantTable.getColumn("id"), SortOrder.ASC)
-                    .limit(size, from)
+                    ).select { ImageVersions.originalSrc eq subQuery[participantTable.getColumn("fileName")] }
+                    .orderBy(subQuery[participantTable.getColumn("id")], SortOrder.ASC)
                     .groupBy(
                         keySelector = {
-                            it[participantTable.getColumn("id") as Column<Int>]
+                            it[subQuery[participantTable.getColumn("id") as Column<Int>]]
                         },
                         valueTransform = {
                             it[ImageVersions.width] x it[ImageVersions.height] to it[ImageVersions.url]
                         }
                     ).map { (id, info) ->
+                        val bestImage = chooseBestImageVersionSize(id, info, width, height)
                         ParticipantAdminDTO(
                             id,
-                            chooseBestImageVersionSize(id, info, width, height)
+                            bestImage,
+                            info.firstOrNull { !it.second.contains("/copies/") }?.second ?: bestImage
                         )
                     }
             }

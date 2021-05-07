@@ -218,13 +218,15 @@ fun chooseBestImageVersionSize(id: Int, info: List<Pair<PlanarSize, String>>, wi
 
 @Suppress("UNCHECKED_CAST")
 fun getAllImages(width: Int, height: Int, page: Int, size: Int): List<String> = database {
-    participantTable.innerJoin(ImageVersions, { participantTable.getColumn("fileName") as Column<String> }, { src })
+    participantTable.innerJoin(ImageVersions,
+        { participantTable.getColumn("fileName") as Column<String> },
+        { originalSrc })
         .slice(
             participantTable.getColumn("id"),
             ImageVersions.url,
             ImageVersions.width,
             ImageVersions.height,
-        ).select { ImageVersions.src eq participantTable.getColumn("fileName") }
+        ).select { ImageVersions.originalSrc eq participantTable.getColumn("fileName") }
         .orderBy(participantTable.getColumn("id"), SortOrder.DESC)
         .limit(size, page * size)
         .groupBy(
