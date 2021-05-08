@@ -54,7 +54,7 @@ const val maxNakrutka = 315000.toLong()
 
 fun getDaysLeft() = (-Date.now().toLong() / msInDay + DAY_OF_THE_END / msInDay).toInt()
 
-fun nakrutka(amount: String) = if (amount == "...") "..."  else ((amount.toIntOrNull() ?: 0) + (max(0, min(maxNakrutka, ((Date.now().toLong() - nakrutkaStartTime) / msInSec)))).toInt()).toString()
+fun nakrutka(amount: String) = "531779"//if (amount == "...") "..."  else ((amount.toIntOrNull() ?: 0) + (max(0, min(maxNakrutka, ((Date.now().toLong() - nakrutkaStartTime) / msInSec)))).toInt()).toString()
 
 
 interface HeaderState : YamlListState<String> {
